@@ -1,0 +1,17 @@
+{
+  "name": "Zanzibar Guide",
+  "short_name": "Zanzibar Guide",
+  "description": "Cassava AI Zanzibar tourism concierge — beaches, Stone Town, safety, bookings",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0891b2",
+  "icons": [
+    {
+      "src": "/travelguide-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

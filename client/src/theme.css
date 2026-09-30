@@ -1,0 +1,87 @@
+/* client/src/theme.css
+   Central theme tokens for the Zanzibar Guide app.
+   Keep this file small — it defines semantic variables used across pages/styles
+   and provides a dark-mode override via the .dark class applied by ThemeContext.
+*/
+
+:root {
+  /* Surface / layout */
+  --zd-bg: #f7fbfa;
+  --zd-panel: #ffffff;
+  --zd-panel-raised: #f4fbfa;
+  --zd-border: rgba(6, 35, 35, 0.06);
+  --zd-border-strong: rgba(6, 35, 35, 0.12);
+
+  /* Typography / text */
+  --zd-text: #042a27;
+  --zd-muted: #6b9b97;
+  --zd-dim: #9bb0b0;
+
+  /* Brand colors */
+  --zd-teal: #71d7cb; /* primary brand teal */
+  --zd-blue: #76b9d5;
+  --zd-accent: #f6b091; /* warm coral accent */
+
+  /* Helpers */
+  --zd-radius: 0.5rem;
+  --primary: var(--zd-teal);
+  --accent: var(--zd-accent);
+  --card: var(--zd-panel);
+  --background: var(--zd-bg);
+  --foreground: var(--zd-text);
+  --border-color: var(--zd-border);
+  --ring: rgba(113, 215, 203, 0.18);
+}
+
+/* Dark theme overrides (applied when <html> has .dark) */
+.dark {
+  --zd-bg: #071518;
+  --zd-panel: #0b1d20;
+  --zd-panel-raised: #102528;
+  --zd-border: rgba(230, 250, 248, 0.11);
+  --zd-border-strong: rgba(230, 250, 248, 0.18);
+
+  --zd-text: #eef6f4;
+  --zd-muted: #8da4a4;
+  --zd-dim: #61797b;
+
+  --zd-teal: #71d7cb;
+  --zd-blue: #76b9d5;
+  --zd-accent: #f6b091;
+
+  --primary: var(--zd-teal);
+  --accent: var(--zd-accent);
+  --card: var(--zd-panel);
+  --background: var(--zd-bg);
+  --foreground: var(--zd-text);
+  --border-color: var(--zd-border);
+  --ring: rgba(113, 215, 203, 0.28);
+}
+
+/* Apply sensible defaults so non-themed components inherit correctly */
+html, body, #root {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Small utility classes used by components */
+.theme-surface {
+  background: var(--card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--zd-radius);
+  box-shadow: 0 10px 30px rgba(2, 8, 8, 0.03);
+}
+
+:focus {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Minimal ThemeToggle styles (keeps the button neutral in both themes) */
+.theme-toggle {
+  border: none;
+  background: transparent;
+  color: var(--foreground);
+  display: inline-grid;
+  place-items: center;
+}
