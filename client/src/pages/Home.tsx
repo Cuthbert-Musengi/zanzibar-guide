@@ -4,17 +4,11 @@ import { Input } from "@/components/ui/input";
 import {
   MapPin,
   AlertCircle,
-  Send,
-  MessageCircle,
   Languages,
-  Heart,
-  ExternalLink,
   PanelRight,
   MoreHorizontal,
   ChevronDown,
   ChevronLeft,
-  CheckCircle2,
-  Loader2,
   Compass,
   Search,
   CalendarDays,
@@ -25,28 +19,21 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { ChatMap, MapLocation } from "@/components/ChatMap";
 import { BookingModal } from "@/components/BookingModal";
-import { QuickReplies } from "@/components/QuickReplies";
 import { PreferencesPanel } from "@/components/PreferencesPanel";
 import { FaqPanel } from "@/components/FaqPanel";
 import { FavoritesPanel } from "@/components/FavoritesPanel";
-import { AttractionCard } from "@/components/AttractionCard";
-import { VoiceInput } from "@/components/VoiceInput";
 import { ItineraryPanel } from "@/components/ItineraryPanel";
 import { OpenDataSearch } from "@/components/OpenDataSearch";
-import { SourceChips } from "@/components/SourceChips";
 import { CompanionPanel } from "@/components/CompanionPanel";
-import { ImageUploadButton } from "@/components/ImageUploadButton";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { HandoffPanel } from "@/components/HandoffPanel";
 import { BrochureUploadPanel } from "@/components/BrochureUploadPanel";
 import { AccessibilityPanel } from "@/components/AccessibilityPanel";
-import { SpeakButton } from "@/components/SpeakButton";
 import { RoutePlannerPanel } from "@/components/RoutePlannerPanel";
 import { PackingListPanel } from "@/components/PackingListPanel";
 import { SouvenirsPanel } from "@/components/SouvenirsPanel";
 import { PhraseTranslatorPanel } from "@/components/PhraseTranslatorPanel";
 import { DocumentVaultPanel } from "@/components/DocumentVaultPanel";
-import { DemoScriptButton } from "@/components/DemoScriptButton";
 import { CatalogSearchPanel } from "@/components/CatalogSearchPanel";
 import { ReviewsPanel } from "@/components/ReviewsPanel";
 import { CurrencyConverterPanel } from "@/components/CurrencyConverterPanel";
@@ -849,18 +836,6 @@ export default function Home() {
               <PanelRight className="w-4 h-4" />
               {t("tools")}
             </Button>
-            <DemoScriptButton
-              onStep={() => {}}
-              onStatus={(text) =>
-                setMessages((prev) => [
-                  ...prev,
-                  { id: `demo_${Date.now()}`, type: "assistant", content: text, timestamp: new Date() },
-                ])
-              }
-              sendChat={async (q) => {
-                await handleSendMessage(new Event("submit") as unknown as React.FormEvent, q);
-              }}
-            />
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <label className="explore-auto-speak flex items-center gap-1 text-[10px] text-muted-foreground cursor-pointer" title={t("autoSpeak")}>
@@ -902,21 +877,6 @@ export default function Home() {
               </DropdownMenuContent>
             </DropdownMenu>
             <span className="explore-powered-by hidden md:inline text-xs text-muted-foreground">{t("poweredBy")} {BRAND.poweredBy}</span>
-            <span
-              role="status"
-              aria-live="polite"
-              title={chatProvider ? `${chatStatusText} · ${chatProvider}` : chatStatusText}
-              className={`inline-flex max-w-[120px] items-center gap-1.5 rounded-full px-2 py-1 text-[11px] font-medium sm:max-w-none ${chatStatusTone}`}
-            >
-              {chatStatus === "checking" ? (
-                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-              ) : chatStatus === "configured" ? (
-                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-              ) : (
-                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              )}
-              <span className="truncate">{chatStatusText}</span>
-            </span>
           </div>
         </div>
       </header>
@@ -935,166 +895,17 @@ export default function Home() {
       )}
 
       <main className="explore-main container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-          <div className="xl:col-span-3">
-            <Card className="chat-window flex h-[min(70vh,640px)] flex-col border-border/70 bg-card/95 xl:h-[700px]">
-              <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-background to-muted/20">
-                {messages.map((message) => (
-                  <div key={message.id} className="chat-message-enter">
-                    <div className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
-                      {message.type === "assistant" && (
-                        <span className="assistant-avatar mr-2 mt-1" aria-hidden="true">
-                          <Compass className="h-4 w-4" />
-                        </span>
-                      )}
-                      <div
-                        className={`min-w-0 max-w-xs break-words px-4 py-3 rounded-2xl shadow-sm lg:max-w-md ${
-                          message.type === "user"
-                            ? "rounded-br-md bg-primary text-primary-foreground"
-                            : "rounded-bl-md border border-border/70 bg-card text-card-foreground"
-                        }`}
-                      >
-                        {message.imageUrl && (
-                          <img
-                            src={message.imageUrl}
-                            alt="Uploaded"
-                            className="rounded-lg mb-2 max-h-40 w-full object-cover"
-                          />
-                        )}
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
-                        <div className="flex items-center justify-between gap-2 mt-1">
-                          <span className="text-xs opacity-70">
-                            {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                          {message.type === "assistant" && message.content && (
-                            <SpeakButton text={message.content} className="opacity-80" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
+        <aside
+          id="tools-panel"
+          className="hidden xl:block"
+          aria-label={t("toolsAndMap")}
+        >
+          {isXl && !toolsOpen ? renderToolsRail() : null}
+        </aside>
 
-                    {message.type === "assistant" && <SourceChips sources={message.sources} />}
-
-                    {message.type === "assistant" && message.locations && message.locations.length > 0 && (
-                      <div className="mt-2 flex gap-2 overflow-x-auto pb-1 items-stretch">
-                        {message.locations.map((location) => (
-                          <div key={location.id} className="flex w-64 shrink-0 flex-col">
-                            <AttractionCard location={location} onBook={handleOpenBooking} />
-                            <div className="flex h-8 items-center justify-center">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 shrink-0 p-0"
-                                onClick={() =>
-                                  isFavorite(location.id) ? removeFavorite(location.id) : addFavorite(location)
-                                }
-                                title={isFavorite(location.id) ? t("removeFromFavorites") : t("addToFavorites")}
-                                aria-label={isFavorite(location.id) ? t("removeFromFavorites") : t("addToFavorites")}
-                              >
-                                <Heart
-                                  className={`h-3.5 w-3.5 shrink-0 ${
-                                    isFavorite(location.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"
-                                  }`}
-                                />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {message.faqLinks && message.faqLinks.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        {message.faqLinks.map((f) => (
-                          <a
-                            key={f.id}
-                            href={f.deepLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-1 text-xs text-primary hover:underline"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            {f.title}
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {isLoading &&
-                  messages[messages.length - 1]?.type === "assistant" &&
-                  !messages[messages.length - 1]?.content && (
-                  <div className="flex justify-start">
-                    <div className="bg-muted px-4 py-3 rounded-2xl rounded-bl-none border border-border/50">
-                      <div className="flex gap-2">
-                        <div className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce" />
-                        <div className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0.2s" }} />
-                        <div className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0.4s" }} />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {errorHint && (
-                  <div role="alert" className="mx-1 my-2 flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3">
-                    <div className="flex min-w-0 items-start gap-2">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                      <p className="min-w-0 text-sm text-destructive">{errorHint}</p>
-                    </div>
-                    {failedAttemptRef.current && (
-                      <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={retryLastMessage}>
-                        {t("retry")}
-                      </Button>
-                    )}
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              <div className="px-4 pt-3 border-t border-border/50">
-                <QuickReplies onSelect={handleQuickReply} isLoading={isLoading} />
-              </div>
-
-              <div className="chat-composer border-t border-border/50 bg-card p-4 transition-shadow">
-                <form onSubmit={handleSendMessage} className="flex flex-wrap gap-2 items-center">
-                  <Input
-                    type="text"
-                    placeholder={t("chatPlaceholder")}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    disabled={isLoading}
-                    className="flex-1 min-w-[140px]"
-                    aria-label={t("sendMessage")}
-                  />
-                  <ImageUploadButton disabled={isLoading} onResult={handleVisionResult} />
-                  <VoiceInput
-                    onResult={(text) => {
-                      const trimmed = text.trim();
-                      if (!trimmed || isLoading) return;
-                      handleSendMessage(new Event("submit") as unknown as React.FormEvent, trimmed);
-                    }}
-                    disabled={isLoading}
-                    lang={language === "es" ? "es-ES" : language === "fr" ? "fr-FR" : language === "de" ? "de-DE" : language === "zh" ? "zh-CN" : "en-US"}
-                  />
-                  <Button type="submit" disabled={isLoading || !input.trim()} size="icon" aria-label={t("sendMessage")}>
-                    <Send className="w-4 h-4" />
-                  </Button>
-                </form>
-              </div>
-            </Card>
-            <p className="xl:hidden text-xs text-muted-foreground mt-3 text-center">
+        <p className="xl:hidden text-xs text-muted-foreground text-center">
           Tip: open <button type="button" className="text-primary underline" onClick={() => setToolsOpen(true)}>Tools</button> — Essentials (map, itinerary, search) → Plan & book → Help & info.
-            </p>
-          </div>
-
-          <aside
-            id="tools-panel"
-            className="hidden xl:block xl:col-span-2 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto"
-            aria-label={t("toolsAndMap")}
-          >
-            {/* Only one Tools instance at a time — avoid duplicate TripWizard state */}
-            {isXl && !toolsOpen ? renderToolsRail() : null}
-          </aside>
-        </div>
+        </p>
 
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
@@ -1112,16 +923,6 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="mt-12 bg-gradient-to-r from-primary/5 to-orange-100/30 rounded-2xl p-8 text-center border border-primary/10">
-          <h2 className="text-3xl font-bold text-foreground mb-4">Ready to explore?</h2>
-          <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Chat with {BRAND.name} for itineraries, lodges, FAQs, and emergency support — powered by {BRAND.poweredBy}.
-          </p>
-          <Button size="lg" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-            <MessageCircle className="w-4 h-4 mr-2" />
-            Start Chatting Now
-          </Button>
-        </div>
       </main>
 
       <Sheet open={toolsOpen} onOpenChange={setToolsOpen}>
