@@ -19,6 +19,7 @@ import {
 import { CurrencySwitcher } from "@/contexts/CurrencyContext";
 import { LanguageSwitcher } from "@/contexts/LanguageContext";
 import { getSessionId } from "@/lib/session";
+import { STONE_TOWN_PHOTO } from "@/const";
 import "./chat-dashboard.css";
 import TypingIndicator from "@/components/TypingIndicator";
 import { QuickReplies } from "@/components/QuickReplies";
@@ -70,8 +71,6 @@ const INITIAL_MESSAGES: ChatMessage[] = [
 ];
 
 const SUGGESTIONS = ["Build me a day plan", "Where to eat tonight?", "Best beaches for swimming"];
-const STONE_TOWN_IMAGE =
-  "https://images.unsplash.com/photo-1739197843134-9e971f74cbff?auto=format&fit=crop&w=1000&q=85";
 
 export default function ChatDashboard() {
   const [, navigate] = useLocation();
@@ -249,6 +248,7 @@ export default function ChatDashboard() {
             <span>ISLAND GUIDE</span>
           </span>
         </Link>
+        <div className="zd-flag-stripe" aria-hidden="true"><span /><span /><span /></div>
 
         <div className="zd-nav-label">WORKSPACE</div>
         <nav className="zd-nav">
@@ -275,6 +275,7 @@ export default function ChatDashboard() {
         )}
 
         <div className="zd-trip-card">
+          <div className="zd-trip-studs" aria-hidden="true" />
           <div className="zd-trip-overline"><span className="zd-trip-marker" /> YOUR ISLAND ESCAPE</div>
           <strong>Stone Town & the coast</strong>
           <span>Make every hour count.</span>
@@ -299,10 +300,9 @@ export default function ChatDashboard() {
         <header className="zd-topbar">
           <div className="zd-topbar-title">
             <span className="zd-eyebrow">YOUR PERSONAL ISLAND CONCIERGE</span>
-            <div className="zd-heading-row"><h1>AI Chat Assistant</h1><span className="zd-mobile-provider"><Sparkles size={13} /> {providerLabel}</span></div>
+            <div className="zd-heading-row"><h1>AI Chat Assistant</h1></div>
           </div>
           <div className="zd-topbar-actions">
-            <span className="zd-provider-pill"><span className="zd-provider-glow" /><Sparkles size={14} />{providerLabel}<ChevronDown size={13} /></span>
             <ThemeToggle />
             <div className="zd-top-avatar" aria-label="Travel guest">TG</div>
           </div>
@@ -322,17 +322,19 @@ export default function ChatDashboard() {
         )}
 
         <section className="zd-conversation" aria-label="Conversation with the Zanzibar travel guide">
-          <div className="zd-conversation-intro">
-            <div className="zd-day-divider"><span /> {new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" }).format(new Date()).toUpperCase()} <span /></div>
-            <h2>Good morning, traveller <Sparkles className="zd-wave" size={14} aria-hidden="true" /></h2>
-            <p>Where shall we take you today?</p>
-          </div>
+          <div className="zd-photo-stage">
+            <div className="zd-conversation-intro">
+              <div className="zd-day-divider"><span /> {new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" }).format(new Date()).toUpperCase()} <span /></div>
+              <h2>Karibu, traveller <Sparkles className="zd-wave" size={14} aria-hidden="true" /></h2>
+              <p>Welcome to Zanzibar. Where shall we take you today?</p>
+            </div>
 
-          <div className="zd-message-feed" id="chat-feed" ref={feedRef} aria-live="polite">
-            {messages.map((message) => (
-              <ChatMessage key={message.id} message={message} providerLabel={providerLabel} />
-            ))}
-            <div className="zd-feed-end"><ArrowDown size={13} /> YOU'RE UP TO DATE</div>
+            <div className="zd-message-feed" id="chat-feed" ref={feedRef} aria-live="polite">
+              {messages.map((message) => (
+                <ChatMessage key={message.id} message={message} providerLabel={providerLabel} />
+              ))}
+              <div className="zd-feed-end"><ArrowDown size={13} /> YOU'RE UP TO DATE</div>
+            </div>
           </div>
 
           <div className="zd-composer-area">
@@ -361,6 +363,10 @@ export default function ChatDashboard() {
               </button>
             </form>
             <div className="zd-composer-foot"><span><Check size={12} /> Your plans stay yours</span><span>AI can make mistakes. Verify important travel details.</span></div>
+            <div className="zd-photo-credit">
+              <span className="zd-credit-day">Photo: <a href="https://commons.wikimedia.org/wiki/File:Zanzibar,_Tanzania_-_panoramio_(2).jpg" target="_blank" rel="noreferrer">The Erica Chang</a>, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer">CC BY 3.0</a>, via Wikimedia Commons</span>
+              <span className="zd-credit-night">Photo: <a href="https://commons.wikimedia.org/wiki/File:Unguja_island_from_Air.jpg" target="_blank" rel="noreferrer">David Berkowitz</a>, <a href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noreferrer">CC BY 2.0</a>, via Wikimedia Commons</span>
+            </div>
           </div>
         </section>
       </main>
@@ -373,7 +379,7 @@ export default function ChatDashboard() {
 
         <section className="zd-destination-card" id="destination-preview">
           <div className="zd-destination-image">
-            <img src={STONE_TOWN_IMAGE} alt="Stone Town's historic waterfront and carved wooden doors" />
+            <img src={STONE_TOWN_PHOTO.src} alt="Stone Town's historic waterfront and the House of Wonders seen from the harbour" />
             <span className="zd-image-tag"><MapPin size={12} /> UNGUNJA ISLAND</span>
             <span className="zd-image-count">01 / 04</span>
           </div>
@@ -382,6 +388,7 @@ export default function ChatDashboard() {
             <p>A living Swahili city of coral-stone lanes, carved doors, and Indian Ocean stories.</p>
             <div className="zd-destination-tags"><span>UNESCO heritage</span><span>Walkable</span></div>
             <button className="zd-text-link" type="button" onClick={() => void sendMessage("What are the highlights of Stone Town for a first-time visitor?")}>Explore highlights <ArrowRight size={14} /></button>
+            <div className="zd-image-credit">Photo: <a href={STONE_TOWN_PHOTO.sourceUrl} target="_blank" rel="noreferrer">{STONE_TOWN_PHOTO.author}</a>, <a href={STONE_TOWN_PHOTO.licenseUrl} target="_blank" rel="noreferrer">{STONE_TOWN_PHOTO.license}</a>, via Wikimedia Commons</div>
           </div>
         </section>
 

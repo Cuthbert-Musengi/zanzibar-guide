@@ -8,6 +8,9 @@ interface ThemeContextType {
   switchable: boolean;
 }
 
+// Only an explicit toggle is persisted, so the app default applies until the user chooses.
+const STORAGE_KEY = "zanzibar-theme";
+
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 interface ThemeProviderProps {
@@ -23,8 +26,8 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
     if (switchable) {
-      const stored = localStorage.getItem("theme");
-      return (stored as Theme) || defaultTheme;
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored === "light" || stored === "dark" ? stored : defaultTheme;
     }
     return defaultTheme;
   });
@@ -36,15 +39,13 @@ export function ThemeProvider({
     } else {
       root.classList.remove("dark");
     }
-
-    if (switchable) {
-      localStorage.setItem("theme", theme);
-    }
-  }, [theme, switchable]);
+  }, [theme]);
 
   const toggleTheme = switchable
     ? () => {
-        setTheme(prev => (prev === "light" ? "dark" : "light"));
+        const next = theme === "light" ? "dark" : "light";
+        localStorage.setItem(STORAGE_KEY, next);
+        setTheme(next);
       }
     : undefined;
 

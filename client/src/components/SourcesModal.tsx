@@ -59,7 +59,7 @@ export default function SourcesModal({
       case "medium":
         return "bg-yellow-100 text-yellow-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-muted text-foreground";
     }
   };
 
@@ -72,8 +72,8 @@ export default function SourcesModal({
     >
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-lg shadow-lg overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+      <div className="relative w-full max-w-2xl bg-card rounded-lg shadow-lg overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <h3 id="sources-title" className="text-sm font-semibold">
             Sources ({sources.length})
           </h3>
@@ -82,7 +82,7 @@ export default function SourcesModal({
               ref={closeRef}
               onClick={onClose}
               aria-label="Close sources"
-              className="inline-flex items-center justify-center rounded-md p-2 hover:bg-gray-100 dark:hover:bg-slate-800"
+              className="inline-flex items-center justify-center rounded-md p-2 hover:bg-accent"
             >
               <X size={16} />
             </button>
@@ -90,9 +90,9 @@ export default function SourcesModal({
         </div>
 
         <div className="max-h-96 overflow-auto p-4 space-y-3">
-              {sources.length === 0 && <div className="text-sm text-gray-600">No sources available.</div>}
+              {sources.length === 0 && <div className="text-sm text-muted-foreground">No sources available.</div>}
               {sources.map((s, idx) => (
-                <article key={s.id || `${idx}`} className="flex flex-col gap-2 p-3 rounded-md border border-gray-100 dark:border-slate-700">
+                <article key={s.id || `${idx}`} className="flex flex-col gap-2 p-3 rounded-md border border-border">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -111,14 +111,14 @@ export default function SourcesModal({
                   <button
                     title="Copy source id"
                     onClick={() => void copyToClipboard(s.url || s.id)}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-50 hover:bg-gray-100 text-xs"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded bg-muted hover:bg-accent text-xs"
                   >
                     <Copy size={14} />
                   </button>
                 </div>
               </div>
 
-              {s.detail && <p className="text-sm text-gray-600 dark:text-slate-300 whitespace-pre-wrap">{s.detail}</p>}
+              {s.detail && <p className="text-sm text-muted-foreground whitespace-pre-wrap">{s.detail}</p>}
 
               <div className="flex items-center justify-between text-xs text-foreground/60">
                 <span>{s.id}</span>
@@ -128,8 +128,8 @@ export default function SourcesModal({
           ))}
         </div>
 
-        <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-gray-100 dark:border-slate-700">
-          <button onClick={onClose} className="rounded-md px-3 py-1 bg-gray-100 hover:bg-gray-200 text-sm">
+        <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-border">
+          <button onClick={onClose} className="rounded-md px-3 py-1 bg-muted hover:bg-accent text-sm">
             Close
           </button>
         </div>

@@ -4,52 +4,40 @@ import { Input } from "@/components/ui/input";
 import {
   MapPin,
   AlertCircle,
-  Send,
-  MessageCircle,
-  Languages,
-  Heart,
-  ExternalLink,
   PanelRight,
   MoreHorizontal,
   ChevronDown,
   ChevronLeft,
-  CheckCircle2,
-  Loader2,
   Compass,
   Search,
   CalendarDays,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { ChatMap, MapLocation } from "@/components/ChatMap";
 import { BookingModal } from "@/components/BookingModal";
-import { QuickReplies } from "@/components/QuickReplies";
 import { PreferencesPanel } from "@/components/PreferencesPanel";
 import { FaqPanel } from "@/components/FaqPanel";
 import { FavoritesPanel } from "@/components/FavoritesPanel";
-import { AttractionCard } from "@/components/AttractionCard";
-import { VoiceInput } from "@/components/VoiceInput";
 import { ItineraryPanel } from "@/components/ItineraryPanel";
 import { OpenDataSearch } from "@/components/OpenDataSearch";
-import { SourceChips } from "@/components/SourceChips";
 import { CompanionPanel } from "@/components/CompanionPanel";
-import { ImageUploadButton } from "@/components/ImageUploadButton";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { HandoffPanel } from "@/components/HandoffPanel";
 import { BrochureUploadPanel } from "@/components/BrochureUploadPanel";
 import { AccessibilityPanel } from "@/components/AccessibilityPanel";
-import { SpeakButton } from "@/components/SpeakButton";
 import { RoutePlannerPanel } from "@/components/RoutePlannerPanel";
 import { PackingListPanel } from "@/components/PackingListPanel";
 import { SouvenirsPanel } from "@/components/SouvenirsPanel";
 import { PhraseTranslatorPanel } from "@/components/PhraseTranslatorPanel";
 import { DocumentVaultPanel } from "@/components/DocumentVaultPanel";
-import { DemoScriptButton } from "@/components/DemoScriptButton";
 import { CatalogSearchPanel } from "@/components/CatalogSearchPanel";
 import { ReviewsPanel } from "@/components/ReviewsPanel";
 import { CurrencyConverterPanel } from "@/components/CurrencyConverterPanel";
+import ThemeToggle from "@/components/ThemeToggle";
+import { STONE_TOWN_PHOTO } from "@/const";
 import "./explore-page.css";
 import { BudgetCalculatorPanel } from "@/components/BudgetCalculatorPanel";
 import { DiningGuidePanel } from "@/components/DiningGuidePanel";
@@ -79,24 +67,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFavorites } from "@/hooks/useFavorites";
-import { useLanguage, LanguageSwitcher, type Language } from "@/contexts/LanguageContext";
+import { useLanguage, LanguageSwitcher } from "@/contexts/LanguageContext";
 import { CurrencySwitcher } from "@/contexts/CurrencyContext";
 import { BRAND } from "@shared/travel";
-import type { FaqArticle, SafetyAdvisory } from "@shared/catalog";
-import type { CitationSource } from "@shared/sources";
-import { getSessionId } from "@/lib/session";
+import type { SafetyAdvisory } from "@shared/catalog";
 import { rememberGuestBooking } from "@/lib/bookings";
 
-interface ChatMessage {
+// A short result from a tool (emergency lookup, trip wizard, handoff, payment) shown above the tools.
+interface ToolNotice {
   id: string;
-  type: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-  locations?: MapLocation[];
-  faqLinks?: FaqArticle[];
-  alerts?: SafetyAdvisory[];
-  sources?: CitationSource[];
-  imageUrl?: string;
+  text: string;
 }
 
 interface BookingTarget {
@@ -106,11 +86,8 @@ interface BookingTarget {
   price: string;
 }
 
-type ChatStatus = "checking" | "configured" | "setup" | "issue" | "unavailable";
-
 const FEATURE_IMAGES = {
-  attractions:
-    "https://images.unsplash.com/photo-1739197843134-9e971f74cbff?auto=format&fit=crop&w=900&q=80",
+  attractions: STONE_TOWN_PHOTO.src,
   safety:
     "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=900&q=80",
   booking:
@@ -119,17 +96,12 @@ const FEATURE_IMAGES = {
 
 export default function Home() {
   const { language, t } = useLanguage();
-  const { favorites, addFavorite, removeFavorite, isFavorite } = useFavorites();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const { favorites, removeFavorite } = useFavorites();
+  const [notices, setNotices] = useState<ToolNotice[]>([]);
   const [mapLocations, setMapLocations] = useState<MapLocation[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<MapLocation | undefined>();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedBookingItem, setSelectedBookingItem] = useState<BookingTarget | undefined>();
-  const [errorHint, setErrorHint] = useState<string | null>(null);
-  const [chatStatus, setChatStatus] = useState<ChatStatus>("checking");
-  const [chatProvider, setChatProvider] = useState("");
   const [alerts, setAlerts] = useState<SafetyAdvisory[]>([]);
   const [emergencyStatus, setEmergencyStatus] = useState<string | null>(null);
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -137,56 +109,15 @@ export default function Home() {
   const [toolQuery, setToolQuery] = useState("");
   const [isXl, setIsXl] = useState(false);
   const [bookingsRefreshKey, setBookingsRefreshKey] = useState(0);
-  const [autoSpeak, setAutoSpeak] = useState(() => localStorage.getItem("travelguide_auto_speak") === "1");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const failedAttemptRef = useRef<{ text: string; userId: string; assistantId: string } | null>(null);
-  const greetingSet = useRef(false);
-  const autoSpeakRef = useRef(autoSpeak);
-  autoSpeakRef.current = autoSpeak;
 
-  useEffect(() => {
-    if (greetingSet.current && messages.length) {
-      setMessages((prev) => {
-        if (prev[0]?.type !== "assistant") return prev;
-        const next = [...prev];
-        next[0] = { ...next[0], content: t("hello") };
-        return next;
-      });
-      return;
-    }
-    setMessages([
-      {
-        id: "1",
-        type: "assistant",
-        content: t("hello"),
-        timestamp: new Date(),
-      },
-    ]);
-    greetingSet.current = true;
-  }, [language, t]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  const addNotice = (text: string) =>
+    setNotices((prev) => [...prev, { id: `${Date.now()}_${prev.length}`, text }].slice(-3));
 
   useEffect(() => {
     fetch("/api/safety/alerts")
       .then((r) => r.json())
       .then((d) => setAlerts(d.data || []))
       .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    fetch("/api/health")
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`Health check failed (${res.status})`);
-        return (await res.json()) as { activeAiProvider?: string; aiConfigured?: boolean };
-      })
-      .then((health) => {
-        setChatProvider(health.activeAiProvider || "");
-        setChatStatus(health.aiConfigured ? "configured" : "setup");
-      })
-      .catch(() => setChatStatus("unavailable"));
   }, []);
 
   useEffect(() => {
@@ -216,253 +147,12 @@ export default function Home() {
         if (d.data?.confirmationCode) {
           rememberGuestBooking(paidId);
           setBookingsRefreshKey((k) => k + 1);
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: `paid_${paidId}`,
-              type: "assistant",
-              content: `Payment confirmed. Confirmation code: ${d.data.confirmationCode}. Track: /bookings/${d.data.confirmationCode}`,
-              timestamp: new Date(),
-            },
-          ]);
+          addNotice(`Payment confirmed. Confirmation code: ${d.data.confirmationCode}. Track: /bookings/${d.data.confirmationCode}`);
         }
         window.history.replaceState({}, "", window.location.pathname);
       })
       .catch(() => {});
   }, []);
-
-  const handleQuickReply = (question: string) => {
-    setInput(question);
-    setTimeout(() => {
-      handleSendMessage(new Event("submit") as unknown as React.FormEvent, question);
-    }, 0);
-  };
-
-  const handleSendMessage = async (
-    e: React.FormEvent,
-    messageText?: string,
-    previousMessages: ChatMessage[] = messages,
-  ) => {
-    e.preventDefault();
-    const textToSend = messageText || input;
-    if (!textToSend.trim() || isLoading) return;
-
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      type: "user",
-      content: textToSend,
-      timestamp: new Date(),
-    };
-
-    const historyForApi = [...previousMessages, userMessage].map((m) => ({
-      role: m.type as "user" | "assistant",
-      content: m.content,
-    }));
-
-    const assistantId = (Date.now() + 1).toString();
-    setMessages((prev) => [
-      ...prev,
-      userMessage,
-      { id: assistantId, type: "assistant", content: "", timestamp: new Date() },
-    ]);
-    setInput("");
-    setIsLoading(true);
-    setErrorHint(null);
-    setChatStatus("checking");
-
-    try {
-      const token = localStorage.getItem("travelguide_token");
-      const res = await fetch("/api/chat/stream", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          messages: historyForApi,
-          sessionId: getSessionId(),
-          channel: "web",
-        }),
-      });
-
-      if (!res.ok || !res.body) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error((errBody as { error?: string }).error || `Chat failed (${res.status})`);
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let assembled = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split("\n\n");
-        buffer = parts.pop() || "";
-        for (const part of parts) {
-          const line = part.trim();
-          if (!line.startsWith("data:")) continue;
-          const payload = line.slice(5).trim();
-          if (payload === "[DONE]") continue;
-          try {
-            const evt = JSON.parse(payload) as {
-              type: string;
-              text?: string;
-              content?: string;
-              locations?: MapLocation[];
-              faqLinks?: FaqArticle[];
-              alerts?: SafetyAdvisory[];
-              error?: string;
-            };
-            if (evt.type === "token" && evt.text) {
-              assembled += evt.text;
-              setMessages((prev) =>
-                prev.map((m) => (m.id === assistantId ? { ...m, content: assembled } : m)),
-              );
-            }
-            if (evt.type === "done") {
-              failedAttemptRef.current = null;
-              setChatStatus("configured");
-              const locations = evt.locations ?? [];
-              const finalContent = evt.content || assembled;
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? {
-                        ...m,
-                        content: finalContent,
-                        locations: locations.length ? locations : undefined,
-                        faqLinks: evt.faqLinks,
-                        alerts: evt.alerts,
-                        sources: (evt as { sources?: CitationSource[] }).sources,
-                      }
-                    : m,
-                ),
-              );
-              if (locations.length) {
-                setMapLocations(locations);
-                setSelectedLocation(locations[0]);
-              }
-              if (autoSpeakRef.current && finalContent && "speechSynthesis" in window) {
-                window.speechSynthesis.cancel();
-                const u = new SpeechSynthesisUtterance(finalContent.replace(/[*#_>`]/g, " ").slice(0, 1200));
-                window.speechSynthesis.speak(u);
-              }
-            }
-            if (evt.type === "error") throw new Error(evt.error || "Stream error");
-          } catch (parseErr) {
-            if (parseErr instanceof SyntaxError) continue;
-            throw parseErr;
-          }
-        }
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Something went wrong";
-      failedAttemptRef.current = { text: textToSend, userId: userMessage.id, assistantId };
-      setChatStatus("issue");
-      setErrorHint(msg);
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantId
-            ? {
-                ...m,
-                content:
-                  m.content ||
-                  "I couldn't get a reply. Check the chat status above and try again.",
-              }
-            : m,
-        ),
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const retryLastMessage = () => {
-    const failedAttempt = failedAttemptRef.current;
-    if (!failedAttempt || isLoading) return;
-    const previousMessages = messages.filter(
-      (message) => message.id !== failedAttempt.userId && message.id !== failedAttempt.assistantId,
-    );
-    setMessages(previousMessages);
-    void handleSendMessage(
-      new Event("submit") as unknown as React.FormEvent,
-      failedAttempt.text,
-      previousMessages,
-    );
-  };
-
-  const chatStatusText = {
-    checking: t("aiChecking"),
-    configured: t("aiConfigured"),
-    setup: t("aiSetupNeeded"),
-    issue: t("aiNeedsAttention"),
-    unavailable: t("aiStatusUnavailable"),
-  }[chatStatus];
-  const chatStatusTone = {
-    checking: "bg-muted text-muted-foreground",
-    configured: "bg-emerald-50 text-emerald-800",
-    setup: "bg-amber-50 text-amber-900",
-    issue: "bg-red-50 text-red-800",
-    unavailable: "bg-muted text-muted-foreground",
-  }[chatStatus];
-  const chatStatusDot = {
-    checking: "bg-muted-foreground animate-pulse",
-    configured: "bg-emerald-600",
-    setup: "bg-amber-600",
-    issue: "bg-red-600",
-    unavailable: "bg-muted-foreground",
-  }[chatStatus];
-
-  const handleOpenBooking = (location: MapLocation) => {
-    setSelectedBookingItem({
-      id: location.id,
-      name: location.name,
-      type: location.type === "hotel" ? "hotel" : location.type === "attraction" ? "attraction" : "tour",
-      price: location.price || "On request",
-    });
-    setBookingModalOpen(true);
-  };
-
-  const handleVisionResult = (
-    result: {
-      content: string;
-      locations?: MapLocation[];
-      faqLinks?: FaqArticle[];
-      alerts?: SafetyAdvisory[];
-      sources?: CitationSource[];
-    },
-    previewUrl: string,
-    caption: string,
-  ) => {
-    const locations = result.locations || [];
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `img_u_${Date.now()}`,
-        type: "user",
-        content: caption || "Photo uploaded",
-        timestamp: new Date(),
-        imageUrl: previewUrl,
-      },
-      {
-        id: `img_a_${Date.now() + 1}`,
-        type: "assistant",
-        content: result.content,
-        timestamp: new Date(),
-        locations: locations.length ? locations : undefined,
-        faqLinks: result.faqLinks,
-        alerts: result.alerts,
-        sources: result.sources,
-      },
-    ]);
-    if (locations.length) {
-      setMapLocations(locations);
-      setSelectedLocation(locations[0]);
-    }
-  };
 
   const findNearbyEmergency = () => {
     setEmergencyStatus("Locating…");
@@ -481,18 +171,11 @@ export default function Home() {
           setMapLocations(locs);
           setSelectedLocation(locs[0]);
           setEmergencyStatus(`Found ${locs.length} nearby support centers`);
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now().toString(),
-              type: "assistant",
-              content: `Nearest emergency support from your location:\n\n${locs
-                .map((l: MapLocation & { distanceKm?: number }) => `• ${l.name}${l.distanceKm != null ? ` (${l.distanceKm} km)` : ""} — ${l.description || ""}`)
-                .join("\n")}`,
-              timestamp: new Date(),
-              locations: locs,
-            },
-          ]);
+          addNotice(
+            `Nearest emergency support from your location:\n\n${locs
+              .map((l: MapLocation & { distanceKm?: number }) => `• ${l.name}${l.distanceKm != null ? ` (${l.distanceKm} km)` : ""}${l.description ? `: ${l.description}` : ""}`)
+              .join("\n")}`,
+          );
         } catch (err) {
           setEmergencyStatus(err instanceof Error ? err.message : "Emergency lookup failed");
         }
@@ -642,28 +325,12 @@ export default function Home() {
               setSelectedLocation(stops[0]);
             }
             if (summary) {
-              setMessages((prev) => [
-                ...prev,
-                {
-                  id: `wiz_${Date.now()}`,
-                  type: "assistant",
-                  content: summary,
-                  timestamp: new Date(),
-                },
-              ]);
+              addNotice(summary);
             }
           }}
           onDecision={(accepted, message) => {
             setToolsOpen(false);
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: `wiz_dec_${Date.now()}`,
-                type: "assistant",
-                content: accepted ? `✓ ${message}` : message,
-                timestamp: new Date(),
-              },
-            ]);
+            addNotice(accepted ? `✓ ${message}` : message);
           }}
         />
 
@@ -771,13 +438,8 @@ export default function Home() {
         <BookingsPanel refreshKey={bookingsRefreshKey} />
 
         <HandoffPanel
-          messages={messages.map((m) => ({ type: m.type, content: m.content }))}
-          onStatus={(text) =>
-            setMessages((prev) => [
-              ...prev,
-              { id: `hd_${Date.now()}`, type: "assistant", content: text, timestamp: new Date() },
-            ])
-          }
+          messages={notices.map((n) => ({ type: "assistant" as const, content: n.text }))}
+          onStatus={addNotice}
         />
         </div>
       </details>}
@@ -840,46 +502,10 @@ export default function Home() {
               <h1 className="travel-brand truncate text-xl text-foreground">{BRAND.name}</h1>
               <p className="truncate text-[11px] text-muted-foreground">{BRAND.tagline}</p>
             </div>
-            <Button
-              size="sm"
-              className="h-9 shrink-0 gap-1.5 px-3 font-semibold shadow-sm"
-              onClick={() => setToolsOpen(true)}
-              aria-label={t("openTools")}
-            >
-              <PanelRight className="w-4 h-4" />
-              {t("tools")}
-            </Button>
-            <DemoScriptButton
-              onStep={() => {}}
-              onStatus={(text) =>
-                setMessages((prev) => [
-                  ...prev,
-                  { id: `demo_${Date.now()}`, type: "assistant", content: text, timestamp: new Date() },
-                ])
-              }
-              sendChat={async (q) => {
-                await handleSendMessage(new Event("submit") as unknown as React.FormEvent, q);
-              }}
-            />
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
-            <label className="explore-auto-speak flex items-center gap-1 text-[10px] text-muted-foreground cursor-pointer" title={t("autoSpeak")}>
-              <input
-                type="checkbox"
-                checked={autoSpeak}
-                onChange={(e) => {
-                  setAutoSpeak(e.target.checked);
-                  localStorage.setItem("travelguide_auto_speak", e.target.checked ? "1" : "0");
-                }}
-                aria-label={t("autoSpeak")}
-              />
-              {t("autoSpeak")}
-            </label>
-            <CurrencySwitcher />
-            <div className="flex items-center gap-1">
-              <Languages className="w-3.5 h-3.5 text-muted-foreground" />
-              <LanguageSwitcher />
-            </div>
+            <CurrencySwitcher showRefresh={false} />
+            <LanguageSwitcher />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="h-8 gap-1.5 px-2" aria-label={t("moreNavigation")}>
@@ -889,33 +515,17 @@ export default function Home() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuLabel>{t("moreNavigation")}</DropdownMenuLabel>
-                <DropdownMenuItem asChild><Link href="/">AI Chat Dashboard</Link></DropdownMenuItem>
-                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild><Link href="/">AI Chat</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link href="/compare-trips">{t("compare")}</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/widget">{t("widget")}</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link href="/account">{t("account")}</Link></DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild><Link href="/messaging">{t("whatsApp")}</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/analytics">{t("analytics")}</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/admin">{t("admin")}</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/agent">{t("agent")}</Link></DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <span className="explore-powered-by hidden md:inline text-xs text-muted-foreground">{t("poweredBy")} {BRAND.poweredBy}</span>
-            <span
-              role="status"
-              aria-live="polite"
-              title={chatProvider ? `${chatStatusText} · ${chatProvider}` : chatStatusText}
-              className={`inline-flex max-w-[120px] items-center gap-1.5 rounded-full px-2 py-1 text-[11px] font-medium sm:max-w-none ${chatStatusTone}`}
-            >
-              {chatStatus === "checking" ? (
-                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-              ) : chatStatus === "configured" ? (
-                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-              ) : (
-                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              )}
-              <span className="truncate">{chatStatusText}</span>
+            <ThemeToggle />
+            <span className="explore-powered-by hidden md:inline-flex items-center gap-2 text-xs text-muted-foreground">
+              {t("poweredBy")} {BRAND.poweredBy}
+              {/* Two transparent renderings of the logo: navy lettering for light, pale lettering for dark. */}
+              <img src="/images/cassava-ai-logo.png" alt="" className="h-4 w-auto dark:hidden" />
+              <img src="/images/cassava-ai-logo-dark.png" alt="" className="hidden h-4 w-auto dark:block" />
             </span>
           </div>
         </div>
@@ -935,172 +545,41 @@ export default function Home() {
       )}
 
       <main className="explore-main container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-          <div className="xl:col-span-3">
-            <Card className="chat-window flex h-[min(70vh,640px)] flex-col border-border/70 bg-card/95 xl:h-[700px]">
-              <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-background to-muted/20">
-                {messages.map((message) => (
-                  <div key={message.id} className="chat-message-enter">
-                    <div className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
-                      {message.type === "assistant" && (
-                        <span className="assistant-avatar mr-2 mt-1" aria-hidden="true">
-                          <Compass className="h-4 w-4" />
-                        </span>
-                      )}
-                      <div
-                        className={`min-w-0 max-w-xs break-words px-4 py-3 rounded-2xl shadow-sm lg:max-w-md ${
-                          message.type === "user"
-                            ? "rounded-br-md bg-primary text-primary-foreground"
-                            : "rounded-bl-md border border-border/70 bg-card text-card-foreground"
-                        }`}
-                      >
-                        {message.imageUrl && (
-                          <img
-                            src={message.imageUrl}
-                            alt="Uploaded"
-                            className="rounded-lg mb-2 max-h-40 w-full object-cover"
-                          />
-                        )}
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
-                        <div className="flex items-center justify-between gap-2 mt-1">
-                          <span className="text-xs opacity-70">
-                            {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                          {message.type === "assistant" && message.content && (
-                            <SpeakButton text={message.content} className="opacity-80" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {message.type === "assistant" && <SourceChips sources={message.sources} />}
-
-                    {message.type === "assistant" && message.locations && message.locations.length > 0 && (
-                      <div className="mt-2 flex gap-2 overflow-x-auto pb-1 items-stretch">
-                        {message.locations.map((location) => (
-                          <div key={location.id} className="flex w-64 shrink-0 flex-col">
-                            <AttractionCard location={location} onBook={handleOpenBooking} />
-                            <div className="flex h-8 items-center justify-center">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 shrink-0 p-0"
-                                onClick={() =>
-                                  isFavorite(location.id) ? removeFavorite(location.id) : addFavorite(location)
-                                }
-                                title={isFavorite(location.id) ? t("removeFromFavorites") : t("addToFavorites")}
-                                aria-label={isFavorite(location.id) ? t("removeFromFavorites") : t("addToFavorites")}
-                              >
-                                <Heart
-                                  className={`h-3.5 w-3.5 shrink-0 ${
-                                    isFavorite(location.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"
-                                  }`}
-                                />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {message.faqLinks && message.faqLinks.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        {message.faqLinks.map((f) => (
-                          <a
-                            key={f.id}
-                            href={f.deepLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-1 text-xs text-primary hover:underline"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            {f.title}
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {isLoading &&
-                  messages[messages.length - 1]?.type === "assistant" &&
-                  !messages[messages.length - 1]?.content && (
-                  <div className="flex justify-start">
-                    <div className="bg-muted px-4 py-3 rounded-2xl rounded-bl-none border border-border/50">
-                      <div className="flex gap-2">
-                        <div className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce" />
-                        <div className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0.2s" }} />
-                        <div className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0.4s" }} />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {errorHint && (
-                  <div role="alert" className="mx-1 my-2 flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3">
-                    <div className="flex min-w-0 items-start gap-2">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                      <p className="min-w-0 text-sm text-destructive">{errorHint}</p>
-                    </div>
-                    {failedAttemptRef.current && (
-                      <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={retryLastMessage}>
-                        {t("retry")}
-                      </Button>
-                    )}
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
+        {notices.length > 0 && (
+          <section aria-live="polite" aria-label="Latest updates" className="mb-4 space-y-2">
+            {notices.map((notice) => (
+              <div key={notice.id} className="flex items-start justify-between gap-3 rounded-lg border border-primary/30 bg-accent p-3 text-sm text-accent-foreground">
+                <p className="min-w-0 whitespace-pre-wrap">{notice.text}</p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 shrink-0 px-2"
+                  onClick={() => setNotices((prev) => prev.filter((n) => n.id !== notice.id))}
+                >
+                  Dismiss
+                </Button>
               </div>
+            ))}
+          </section>
+        )}
+        <aside
+          id="tools-panel"
+          className="hidden xl:block"
+          aria-label={t("toolsAndMap")}
+        >
+          {isXl && !toolsOpen ? renderToolsRail() : null}
+        </aside>
 
-              <div className="px-4 pt-3 border-t border-border/50">
-                <QuickReplies onSelect={handleQuickReply} isLoading={isLoading} />
-              </div>
-
-              <div className="chat-composer border-t border-border/50 bg-card p-4 transition-shadow">
-                <form onSubmit={handleSendMessage} className="flex flex-wrap gap-2 items-center">
-                  <Input
-                    type="text"
-                    placeholder={t("chatPlaceholder")}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    disabled={isLoading}
-                    className="flex-1 min-w-[140px]"
-                    aria-label={t("sendMessage")}
-                  />
-                  <ImageUploadButton disabled={isLoading} onResult={handleVisionResult} />
-                  <VoiceInput
-                    onResult={(text) => {
-                      const trimmed = text.trim();
-                      if (!trimmed || isLoading) return;
-                      handleSendMessage(new Event("submit") as unknown as React.FormEvent, trimmed);
-                    }}
-                    disabled={isLoading}
-                    lang={language === "es" ? "es-ES" : language === "fr" ? "fr-FR" : language === "de" ? "de-DE" : language === "zh" ? "zh-CN" : "en-US"}
-                  />
-                  <Button type="submit" disabled={isLoading || !input.trim()} size="icon" aria-label={t("sendMessage")}>
-                    <Send className="w-4 h-4" />
-                  </Button>
-                </form>
-              </div>
-            </Card>
-            <p className="xl:hidden text-xs text-muted-foreground mt-3 text-center">
-          Tip: open <button type="button" className="text-primary underline" onClick={() => setToolsOpen(true)}>Tools</button> — Essentials (map, itinerary, search) → Plan & book → Help & info.
-            </p>
-          </div>
-
-          <aside
-            id="tools-panel"
-            className="hidden xl:block xl:col-span-2 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto"
-            aria-label={t("toolsAndMap")}
-          >
-            {/* Only one Tools instance at a time — avoid duplicate TripWizard state */}
-            {isXl && !toolsOpen ? renderToolsRail() : null}
-          </aside>
-        </div>
+        <p className="xl:hidden text-xs text-muted-foreground text-center">
+          Tip: open <button type="button" className="text-primary underline" onClick={() => setToolsOpen(true)}>Tools</button>: Essentials (map, itinerary, search) → Plan & book → Help & info.
+        </p>
 
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            { img: FEATURE_IMAGES.attractions, title: "Discover Attractions", body: "Hours, fees, transport, and events from the mock Commission API." },
-            { img: FEATURE_IMAGES.safety, title: "Stay Safe & Informed", body: "Dynamic compliance feed with rule-based watch/alert severity." },
-            { img: FEATURE_IMAGES.booking, title: "Book securely", body: "Tokenized PCI-DSS shaped mock gateway — no card PANs stored." },
+            { img: FEATURE_IMAGES.attractions, credit: STONE_TOWN_PHOTO, title: "Discover Attractions", body: "Hours, fees, transport, and events from the mock Commission API." },
+            { img: FEATURE_IMAGES.safety, credit: null, title: "Stay Safe & Informed", body: "Dynamic compliance feed with rule-based watch/alert severity." },
+            { img: FEATURE_IMAGES.booking, credit: null, title: "Book securely", body: "Tokenized PCI-DSS shaped mock gateway, no card PANs stored." },
           ].map((block) => (
             <div key={block.title}>
               <div className="relative overflow-hidden rounded-xl mb-4 h-40">
@@ -1108,19 +587,13 @@ export default function Home() {
               </div>
               <h3 className="font-bold text-foreground mb-1">{block.title}</h3>
               <p className="text-sm text-muted-foreground">{block.body}</p>
+              {block.credit && (
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Photo: <a className="underline" href={block.credit.sourceUrl} target="_blank" rel="noreferrer">{block.credit.author}</a>, {block.credit.license}, via Wikimedia Commons
+                </p>
+              )}
             </div>
           ))}
-        </div>
-
-        <div className="mt-12 bg-gradient-to-r from-primary/5 to-orange-100/30 rounded-2xl p-8 text-center border border-primary/10">
-          <h2 className="text-3xl font-bold text-foreground mb-4">Ready to explore?</h2>
-          <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Chat with {BRAND.name} for itineraries, lodges, FAQs, and emergency support — powered by {BRAND.poweredBy}.
-          </p>
-          <Button size="lg" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-            <MessageCircle className="w-4 h-4 mr-2" />
-            Start Chatting Now
-          </Button>
         </div>
       </main>
 

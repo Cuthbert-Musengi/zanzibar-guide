@@ -169,7 +169,7 @@ export function useCurrency() {
   return ctx;
 }
 
-export function CurrencySwitcher() {
+export function CurrencySwitcher({ showRefresh = true }: { showRefresh?: boolean }) {
   const { currency, setCurrency, rates, ratesLoading, ratesUpdatedAt, refreshRates } = useCurrency();
   return (
     <div className="flex items-center gap-1">
@@ -192,16 +192,18 @@ export function CurrencySwitcher() {
           </option>
         ))}
       </select>
-      <button
-        type="button"
-        className="text-[10px] text-primary hover:underline px-1"
-        onClick={() => refreshRates()}
-        disabled={ratesLoading}
-        title="Refresh exchange rates"
-        aria-label="Refresh exchange rates"
-      >
-        {ratesLoading ? "…" : "FX"}
-      </button>
+      {showRefresh && (
+        <button
+          type="button"
+          className="text-[10px] text-primary hover:underline px-1"
+          onClick={() => refreshRates()}
+          disabled={ratesLoading}
+          title="Refresh exchange rates"
+          aria-label="Refresh exchange rates"
+        >
+          {ratesLoading ? "…" : "FX"}
+        </button>
+      )}
     </div>
   );
 }
