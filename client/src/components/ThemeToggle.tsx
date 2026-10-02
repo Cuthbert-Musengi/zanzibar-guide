@@ -14,6 +14,7 @@ export default function ThemeToggle() {
       type="button"
       aria-pressed={isDark}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={toggleTheme}
       className="theme-toggle"
       style={{
@@ -22,7 +23,7 @@ export default function ThemeToggle() {
         width: 34,
         height: 34,
         borderRadius: 8,
-        border: "1px solid rgba(255,255,255,0.04)",
+        border: "1px solid var(--border)",
         background: "transparent",
       }}
     >

@@ -70,7 +70,7 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="light" switchable={true}>
+      <ThemeProvider defaultTheme="dark" switchable={true}>
         <LanguageProvider>
           <AccessibilityProvider>
             <CurrencyProvider>

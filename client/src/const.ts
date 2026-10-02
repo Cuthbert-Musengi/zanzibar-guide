@@ -15,3 +15,12 @@ export const getLoginUrl = () => {
 
   return url.toString();
 };
+
+// Stone Town harbour photo (CC BY 4.0). The licence requires the credit to be shown wherever it is used.
+export const STONE_TOWN_PHOTO = {
+  src: "/images/stone-town-harbour.jpg",
+  author: "Dr. Ondřej Havelka",
+  license: "CC BY 4.0",
+  licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
+  sourceUrl: "https://commons.wikimedia.org/wiki/File:Harbour_at_the_picturesque_Stone_Town.jpg",
+};

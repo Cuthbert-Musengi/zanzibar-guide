@@ -20,7 +20,7 @@ const LABEL_STYLE: Record<string, string> = {
   optimal: "bg-emerald-100 text-emerald-800",
   good: "bg-sky-100 text-sky-800",
   moderate: "bg-amber-100 text-amber-900",
-  indoor: "bg-slate-200 text-slate-700",
+  indoor: "bg-muted text-muted-foreground",
 };
 
 export function SuitabilityWeatherPanel({ locationId }: { locationId?: string }) {
