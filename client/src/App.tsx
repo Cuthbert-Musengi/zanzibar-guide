@@ -8,6 +8,7 @@ import Analytics from "@/pages/Analytics";
 import Messaging from "@/pages/Messaging";
 import Admin from "@/pages/Admin";
 import Account from "@/pages/Account";
+import AuthPage from "@/pages/AuthPage";
 import AgentDesk from "@/pages/AgentDesk";
 import SharedTrip from "@/pages/SharedTrip";
 import CollabTripPage from "@/pages/CollabTripPage";
@@ -20,6 +21,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { AccessibilityProvider } from "./contexts/AccessibilityContext";
 import { CurrencyProvider } from "./contexts/CurrencyContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import { useEffect } from "react";
 
 function PwaRegister() {
@@ -55,6 +57,12 @@ function Router() {
       <Route path={"/messaging"} component={Messaging} />
       <Route path={"/admin"} component={Admin} />
       <Route path={"/account"} component={Account} />
+      <Route path={"/login"}>
+        <AuthPage mode="login" />
+      </Route>
+      <Route path={"/signup"}>
+        <AuthPage mode="signup" />
+      </Route>
       <Route path={"/agent"} component={AgentDesk} />
       <Route path={"/bookings/:code"} component={BookingTrackPage} />
       <Route path={"/trip/:id"} component={SharedTrip} />
@@ -74,11 +82,13 @@ function App() {
         <LanguageProvider>
           <AccessibilityProvider>
             <CurrencyProvider>
-              <TooltipProvider>
-                <PwaRegister />
-                <Toaster />
-                <Router />
-              </TooltipProvider>
+              <AuthProvider>
+                <TooltipProvider>
+                  <PwaRegister />
+                  <Toaster />
+                  <Router />
+                </TooltipProvider>
+              </AuthProvider>
             </CurrencyProvider>
           </AccessibilityProvider>
         </LanguageProvider>

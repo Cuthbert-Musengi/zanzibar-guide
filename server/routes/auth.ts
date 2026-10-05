@@ -1,24 +1,33 @@
-import { Router } from "express";
-import { authFromHeader, loginUser, registerUser, updateUser } from "../lib/users";
+import { Router, type Response } from "express";
+import { AuthError, authFromHeader, endSession, loginUser, registerUser, updateUser } from "../lib/users";
+import { authRateLimitMiddleware } from "../lib/rateLimiter";
 
 export const authRouter = Router();
 
-authRouter.post("/register", async (req, res) => {
+function sendAuthError(res: Response, err: unknown, status: number, fallback: string) {
+  if (err instanceof AuthError) {
+    res.status(status).json({ error: err.message, field: err.field });
+    return;
+  }
+  console.error("[auth]", err);
+  res.status(500).json({ error: fallback });
+}
+
+authRouter.post("/register", authRateLimitMiddleware, async (req, res) => {
   try {
     const { email, password, name } = req.body as { email?: string; password?: string; name?: string };
     if (!email || !password) {
       res.status(400).json({ error: "email and password required" });
       return;
     }
-    const user = await registerUser(email, password, name || "Traveller");
-    const { token } = await loginUser(email, password);
-    res.status(201).json({ data: { user, token } });
+    const result = await registerUser(email, password, name || "Traveller");
+    res.status(201).json({ data: result });
   } catch (err) {
-    res.status(400).json({ error: err instanceof Error ? err.message : "Register failed" });
+    sendAuthError(res, err, 400, "Register failed");
   }
 });
 
-authRouter.post("/login", async (req, res) => {
+authRouter.post("/login", authRateLimitMiddleware, async (req, res) => {
   try {
     const { email, password } = req.body as { email?: string; password?: string };
     if (!email || !password) {
@@ -28,8 +37,14 @@ authRouter.post("/login", async (req, res) => {
     const result = await loginUser(email, password);
     res.json({ data: result });
   } catch (err) {
-    res.status(401).json({ error: err instanceof Error ? err.message : "Login failed" });
+    sendAuthError(res, err, 401, "Login failed");
   }
+});
+
+authRouter.post("/logout", async (req, res) => {
+  const header = req.headers.authorization;
+  if (header?.startsWith("Bearer ")) await endSession(header.slice(7));
+  res.status(204).end();
 });
 
 authRouter.get("/me", (req, res) => {

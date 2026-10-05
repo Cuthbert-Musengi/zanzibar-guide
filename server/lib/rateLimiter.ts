@@ -85,6 +85,39 @@ let impl: {
   }
 })();
 
+/**
+ * authRateLimitMiddleware
+ *
+ * A tighter per-IP limit for login and registration, to slow down password guessing.
+ * Always in-memory, so the count is per server process.
+ */
+const AUTH_WINDOW_MS = Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS || 15 * 60_000);
+const AUTH_MAX = Number(process.env.AUTH_RATE_LIMIT_MAX || 10);
+const authHits = new Map<string, { count: number; reset: number }>();
+
+export const authRateLimitMiddleware: RequestHandler = (req, res, next) => {
+  const ip = (req.ip || (req.headers["x-forwarded-for"] as string) || "local").toString();
+  const now = Date.now();
+  const row = authHits.get(ip);
+  if (!row || row.reset < now) {
+    if (authHits.size > 1000) {
+      authHits.forEach((entry, key) => {
+        if (entry.reset < now) authHits.delete(key);
+      });
+    }
+    authHits.set(ip, { count: 1, reset: now + AUTH_WINDOW_MS });
+    next();
+    return;
+  }
+  row.count += 1;
+  if (row.count > AUTH_MAX) {
+    res.setHeader("Retry-After", String(Math.ceil((row.reset - now) / 1000)));
+    res.status(429).json({ error: "Too many attempts. Please wait a few minutes and try again." });
+    return;
+  }
+  next();
+};
+
 export const apiRateLimitMiddleware: RequestHandler = async (req, res, next) => {
   const ip = (req.ip || (req.headers["x-forwarded-for"] as string) || "local").toString();
   try {

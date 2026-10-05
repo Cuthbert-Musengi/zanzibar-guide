@@ -38,6 +38,7 @@ import { ReviewsPanel } from "@/components/ReviewsPanel";
 import { CurrencyConverterPanel } from "@/components/CurrencyConverterPanel";
 import ThemeToggle from "@/components/ThemeToggle";
 import { STONE_TOWN_PHOTO } from "@/const";
+import PhotoCredit from "@/components/PhotoCredit";
 import "./explore-page.css";
 import { BudgetCalculatorPanel } from "@/components/BudgetCalculatorPanel";
 import { DiningGuidePanel } from "@/components/DiningGuidePanel";
@@ -67,6 +68,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFavorites } from "@/hooks/useFavorites";
+import AccountMenu from "@/components/AccountMenu";
 import { useLanguage, LanguageSwitcher } from "@/contexts/LanguageContext";
 import { CurrencySwitcher } from "@/contexts/CurrencyContext";
 import { BRAND } from "@shared/travel";
@@ -517,10 +519,10 @@ export default function Home() {
                 <DropdownMenuLabel>{t("moreNavigation")}</DropdownMenuLabel>
                 <DropdownMenuItem asChild><Link href="/">AI Chat</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link href="/compare-trips">{t("compare")}</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/account">{t("account")}</Link></DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <ThemeToggle />
+            <AccountMenu />
             <span className="explore-powered-by hidden md:inline-flex items-center gap-2 text-xs text-muted-foreground">
               {t("poweredBy")} {BRAND.poweredBy}
               {/* Two transparent renderings of the logo: navy lettering for light, pale lettering for dark. */}
@@ -588,9 +590,7 @@ export default function Home() {
               <h3 className="font-bold text-foreground mb-1">{block.title}</h3>
               <p className="text-sm text-muted-foreground">{block.body}</p>
               {block.credit && (
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  Photo: <a className="underline" href={block.credit.sourceUrl} target="_blank" rel="noreferrer">{block.credit.author}</a>, {block.credit.license}, via Wikimedia Commons
-                </p>
+                <PhotoCredit photo={block.credit} className="mt-1 block text-[11px] text-muted-foreground [&_a]:underline" />
               )}
             </div>
           ))}
