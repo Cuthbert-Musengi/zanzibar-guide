@@ -10,10 +10,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { userInitials, useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 /** Top-bar account control: a "Log in" button for guests, an avatar menu once signed in. */
 export default function AccountMenu() {
   const { user, status, logout } = useAuth();
+  const { t } = useLanguage();
   const [location, navigate] = useLocation();
 
   // Render nothing while the stored session is being checked, so the button doesn't flash.
@@ -23,7 +25,7 @@ export default function AccountMenu() {
     const next = location === "/" ? "" : `?next=${encodeURIComponent(location)}`;
     return (
       <Button asChild size="sm" className="h-9 px-4 font-semibold">
-        <Link href={`/login${next}`}>Log in</Link>
+        <Link href={`/login${next}`}>{t("logIn")}</Link>
       </Button>
     );
   }
@@ -39,7 +41,7 @@ export default function AccountMenu() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={`Account menu for ${user.name}`}
+          aria-label={t("accountMenuFor", { name: user.name })}
           className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {userInitials(user.name)}
@@ -53,11 +55,11 @@ export default function AccountMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/account">
-            <User /> My account and bookings
+            <User /> {t("myAccountAndBookings")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={handleLogout}>
-          <LogOut /> Log out
+          <LogOut /> {t("logOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

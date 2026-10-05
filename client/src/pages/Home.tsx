@@ -69,7 +69,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useFavorites } from "@/hooks/useFavorites";
 import AccountMenu from "@/components/AccountMenu";
-import { useLanguage, LanguageSwitcher } from "@/contexts/LanguageContext";
+import LanguageMenu from "@/components/LanguageMenu";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { CurrencySwitcher } from "@/contexts/CurrencyContext";
 import { BRAND } from "@shared/travel";
 import type { SafetyAdvisory } from "@shared/catalog";
@@ -507,7 +508,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <CurrencySwitcher showRefresh={false} />
-            <LanguageSwitcher />
+            <LanguageMenu />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="h-8 gap-1.5 px-2" aria-label={t("moreNavigation")}>
