@@ -98,14 +98,16 @@ export function ChatMap({ locations, selectedLocation, onLocationSelect }: ChatM
   }, [locations, selectedLocation, onLocationSelect, formatPriceLabel, language]);
 
   return (
-    <div className="relative w-full h-full">
-      <div className="absolute top-3 left-3 z-[1000] bg-background/95 backdrop-blur px-3 py-1.5 rounded-lg border shadow-sm">
+    // isolate: keeps Leaflet's high z-indexes inside the map so menus and dialogs open above it.
+    <div className="relative isolate w-full h-full">
+      {/* Top-right: Leaflet's zoom control owns the top-left corner. */}
+      <div className="absolute top-3 right-3 z-[1000] bg-background/95 backdrop-blur px-3 py-1.5 rounded-lg border shadow-sm">
         <p className="text-xs font-semibold">
           Live map ({import.meta.env.VITE_MAPBOX_TOKEN ? "Mapbox" : "OpenStreetMap"})
         </p>
-        <p className="text-[10px] text-muted-foreground">
-          {locations.length ? `${locations.length} pins` : "Ask chat or build an itinerary"}
-        </p>
+        {locations.length > 0 && (
+          <p className="text-[10px] text-muted-foreground">{locations.length} pins</p>
+        )}
       </div>
       <div ref={containerRef} className="w-full h-full min-h-[240px]" />
     </div>

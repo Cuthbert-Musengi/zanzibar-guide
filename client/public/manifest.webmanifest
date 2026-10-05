@@ -4,8 +4,8 @@
   "description": "Cassava AI Zanzibar tourism concierge — beaches, Stone Town, safety, bookings",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0891b2",
+  "background_color": "#06172a",
+  "theme_color": "#0a3d6b",
   "icons": [
     {
       "src": "/travelguide-logo.svg",

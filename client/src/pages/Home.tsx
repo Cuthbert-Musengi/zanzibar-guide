@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import {
   MapPin,
   AlertCircle,
-  Languages,
   PanelRight,
   MoreHorizontal,
   ChevronDown,
@@ -15,7 +14,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { ChatMap, MapLocation } from "@/components/ChatMap";
 import { BookingModal } from "@/components/BookingModal";
@@ -37,6 +36,8 @@ import { DocumentVaultPanel } from "@/components/DocumentVaultPanel";
 import { CatalogSearchPanel } from "@/components/CatalogSearchPanel";
 import { ReviewsPanel } from "@/components/ReviewsPanel";
 import { CurrencyConverterPanel } from "@/components/CurrencyConverterPanel";
+import ThemeToggle from "@/components/ThemeToggle";
+import { STONE_TOWN_PHOTO } from "@/const";
 import "./explore-page.css";
 import { BudgetCalculatorPanel } from "@/components/BudgetCalculatorPanel";
 import { DiningGuidePanel } from "@/components/DiningGuidePanel";
@@ -66,24 +67,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFavorites } from "@/hooks/useFavorites";
-import { useLanguage, LanguageSwitcher, type Language } from "@/contexts/LanguageContext";
+import { useLanguage, LanguageSwitcher } from "@/contexts/LanguageContext";
 import { CurrencySwitcher } from "@/contexts/CurrencyContext";
 import { BRAND } from "@shared/travel";
-import type { FaqArticle, SafetyAdvisory } from "@shared/catalog";
-import type { CitationSource } from "@shared/sources";
-import { getSessionId } from "@/lib/session";
+import type { SafetyAdvisory } from "@shared/catalog";
 import { rememberGuestBooking } from "@/lib/bookings";
 
-interface ChatMessage {
+// A short result from a tool (emergency lookup, trip wizard, handoff, payment) shown above the tools.
+interface ToolNotice {
   id: string;
-  type: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-  locations?: MapLocation[];
-  faqLinks?: FaqArticle[];
-  alerts?: SafetyAdvisory[];
-  sources?: CitationSource[];
-  imageUrl?: string;
+  text: string;
 }
 
 interface BookingTarget {
@@ -93,11 +86,8 @@ interface BookingTarget {
   price: string;
 }
 
-type ChatStatus = "checking" | "configured" | "setup" | "issue" | "unavailable";
-
 const FEATURE_IMAGES = {
-  attractions:
-    "https://images.unsplash.com/photo-1739197843134-9e971f74cbff?auto=format&fit=crop&w=900&q=80",
+  attractions: STONE_TOWN_PHOTO.src,
   safety:
     "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=900&q=80",
   booking:
@@ -106,17 +96,12 @@ const FEATURE_IMAGES = {
 
 export default function Home() {
   const { language, t } = useLanguage();
-  const { favorites, addFavorite, removeFavorite, isFavorite } = useFavorites();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const { favorites, removeFavorite } = useFavorites();
+  const [notices, setNotices] = useState<ToolNotice[]>([]);
   const [mapLocations, setMapLocations] = useState<MapLocation[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<MapLocation | undefined>();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedBookingItem, setSelectedBookingItem] = useState<BookingTarget | undefined>();
-  const [errorHint, setErrorHint] = useState<string | null>(null);
-  const [chatStatus, setChatStatus] = useState<ChatStatus>("checking");
-  const [chatProvider, setChatProvider] = useState("");
   const [alerts, setAlerts] = useState<SafetyAdvisory[]>([]);
   const [emergencyStatus, setEmergencyStatus] = useState<string | null>(null);
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -124,56 +109,15 @@ export default function Home() {
   const [toolQuery, setToolQuery] = useState("");
   const [isXl, setIsXl] = useState(false);
   const [bookingsRefreshKey, setBookingsRefreshKey] = useState(0);
-  const [autoSpeak, setAutoSpeak] = useState(() => localStorage.getItem("travelguide_auto_speak") === "1");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const failedAttemptRef = useRef<{ text: string; userId: string; assistantId: string } | null>(null);
-  const greetingSet = useRef(false);
-  const autoSpeakRef = useRef(autoSpeak);
-  autoSpeakRef.current = autoSpeak;
 
-  useEffect(() => {
-    if (greetingSet.current && messages.length) {
-      setMessages((prev) => {
-        if (prev[0]?.type !== "assistant") return prev;
-        const next = [...prev];
-        next[0] = { ...next[0], content: t("hello") };
-        return next;
-      });
-      return;
-    }
-    setMessages([
-      {
-        id: "1",
-        type: "assistant",
-        content: t("hello"),
-        timestamp: new Date(),
-      },
-    ]);
-    greetingSet.current = true;
-  }, [language, t]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  const addNotice = (text: string) =>
+    setNotices((prev) => [...prev, { id: `${Date.now()}_${prev.length}`, text }].slice(-3));
 
   useEffect(() => {
     fetch("/api/safety/alerts")
       .then((r) => r.json())
       .then((d) => setAlerts(d.data || []))
       .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    fetch("/api/health")
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`Health check failed (${res.status})`);
-        return (await res.json()) as { activeAiProvider?: string; aiConfigured?: boolean };
-      })
-      .then((health) => {
-        setChatProvider(health.activeAiProvider || "");
-        setChatStatus(health.aiConfigured ? "configured" : "setup");
-      })
-      .catch(() => setChatStatus("unavailable"));
   }, []);
 
   useEffect(() => {
@@ -203,253 +147,12 @@ export default function Home() {
         if (d.data?.confirmationCode) {
           rememberGuestBooking(paidId);
           setBookingsRefreshKey((k) => k + 1);
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: `paid_${paidId}`,
-              type: "assistant",
-              content: `Payment confirmed. Confirmation code: ${d.data.confirmationCode}. Track: /bookings/${d.data.confirmationCode}`,
-              timestamp: new Date(),
-            },
-          ]);
+          addNotice(`Payment confirmed. Confirmation code: ${d.data.confirmationCode}. Track: /bookings/${d.data.confirmationCode}`);
         }
         window.history.replaceState({}, "", window.location.pathname);
       })
       .catch(() => {});
   }, []);
-
-  const handleQuickReply = (question: string) => {
-    setInput(question);
-    setTimeout(() => {
-      handleSendMessage(new Event("submit") as unknown as React.FormEvent, question);
-    }, 0);
-  };
-
-  const handleSendMessage = async (
-    e: React.FormEvent,
-    messageText?: string,
-    previousMessages: ChatMessage[] = messages,
-  ) => {
-    e.preventDefault();
-    const textToSend = messageText || input;
-    if (!textToSend.trim() || isLoading) return;
-
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      type: "user",
-      content: textToSend,
-      timestamp: new Date(),
-    };
-
-    const historyForApi = [...previousMessages, userMessage].map((m) => ({
-      role: m.type as "user" | "assistant",
-      content: m.content,
-    }));
-
-    const assistantId = (Date.now() + 1).toString();
-    setMessages((prev) => [
-      ...prev,
-      userMessage,
-      { id: assistantId, type: "assistant", content: "", timestamp: new Date() },
-    ]);
-    setInput("");
-    setIsLoading(true);
-    setErrorHint(null);
-    setChatStatus("checking");
-
-    try {
-      const token = localStorage.getItem("travelguide_token");
-      const res = await fetch("/api/chat/stream", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          messages: historyForApi,
-          sessionId: getSessionId(),
-          channel: "web",
-        }),
-      });
-
-      if (!res.ok || !res.body) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error((errBody as { error?: string }).error || `Chat failed (${res.status})`);
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let assembled = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split("\n\n");
-        buffer = parts.pop() || "";
-        for (const part of parts) {
-          const line = part.trim();
-          if (!line.startsWith("data:")) continue;
-          const payload = line.slice(5).trim();
-          if (payload === "[DONE]") continue;
-          try {
-            const evt = JSON.parse(payload) as {
-              type: string;
-              text?: string;
-              content?: string;
-              locations?: MapLocation[];
-              faqLinks?: FaqArticle[];
-              alerts?: SafetyAdvisory[];
-              error?: string;
-            };
-            if (evt.type === "token" && evt.text) {
-              assembled += evt.text;
-              setMessages((prev) =>
-                prev.map((m) => (m.id === assistantId ? { ...m, content: assembled } : m)),
-              );
-            }
-            if (evt.type === "done") {
-              failedAttemptRef.current = null;
-              setChatStatus("configured");
-              const locations = evt.locations ?? [];
-              const finalContent = evt.content || assembled;
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? {
-                        ...m,
-                        content: finalContent,
-                        locations: locations.length ? locations : undefined,
-                        faqLinks: evt.faqLinks,
-                        alerts: evt.alerts,
-                        sources: (evt as { sources?: CitationSource[] }).sources,
-                      }
-                    : m,
-                ),
-              );
-              if (locations.length) {
-                setMapLocations(locations);
-                setSelectedLocation(locations[0]);
-              }
-              if (autoSpeakRef.current && finalContent && "speechSynthesis" in window) {
-                window.speechSynthesis.cancel();
-                const u = new SpeechSynthesisUtterance(finalContent.replace(/[*#_>`]/g, " ").slice(0, 1200));
-                window.speechSynthesis.speak(u);
-              }
-            }
-            if (evt.type === "error") throw new Error(evt.error || "Stream error");
-          } catch (parseErr) {
-            if (parseErr instanceof SyntaxError) continue;
-            throw parseErr;
-          }
-        }
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Something went wrong";
-      failedAttemptRef.current = { text: textToSend, userId: userMessage.id, assistantId };
-      setChatStatus("issue");
-      setErrorHint(msg);
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantId
-            ? {
-                ...m,
-                content:
-                  m.content ||
-                  "I couldn't get a reply. Check the chat status above and try again.",
-              }
-            : m,
-        ),
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const retryLastMessage = () => {
-    const failedAttempt = failedAttemptRef.current;
-    if (!failedAttempt || isLoading) return;
-    const previousMessages = messages.filter(
-      (message) => message.id !== failedAttempt.userId && message.id !== failedAttempt.assistantId,
-    );
-    setMessages(previousMessages);
-    void handleSendMessage(
-      new Event("submit") as unknown as React.FormEvent,
-      failedAttempt.text,
-      previousMessages,
-    );
-  };
-
-  const chatStatusText = {
-    checking: t("aiChecking"),
-    configured: t("aiConfigured"),
-    setup: t("aiSetupNeeded"),
-    issue: t("aiNeedsAttention"),
-    unavailable: t("aiStatusUnavailable"),
-  }[chatStatus];
-  const chatStatusTone = {
-    checking: "bg-muted text-muted-foreground",
-    configured: "bg-emerald-50 text-emerald-800",
-    setup: "bg-amber-50 text-amber-900",
-    issue: "bg-red-50 text-red-800",
-    unavailable: "bg-muted text-muted-foreground",
-  }[chatStatus];
-  const chatStatusDot = {
-    checking: "bg-muted-foreground animate-pulse",
-    configured: "bg-emerald-600",
-    setup: "bg-amber-600",
-    issue: "bg-red-600",
-    unavailable: "bg-muted-foreground",
-  }[chatStatus];
-
-  const handleOpenBooking = (location: MapLocation) => {
-    setSelectedBookingItem({
-      id: location.id,
-      name: location.name,
-      type: location.type === "hotel" ? "hotel" : location.type === "attraction" ? "attraction" : "tour",
-      price: location.price || "On request",
-    });
-    setBookingModalOpen(true);
-  };
-
-  const handleVisionResult = (
-    result: {
-      content: string;
-      locations?: MapLocation[];
-      faqLinks?: FaqArticle[];
-      alerts?: SafetyAdvisory[];
-      sources?: CitationSource[];
-    },
-    previewUrl: string,
-    caption: string,
-  ) => {
-    const locations = result.locations || [];
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `img_u_${Date.now()}`,
-        type: "user",
-        content: caption || "Photo uploaded",
-        timestamp: new Date(),
-        imageUrl: previewUrl,
-      },
-      {
-        id: `img_a_${Date.now() + 1}`,
-        type: "assistant",
-        content: result.content,
-        timestamp: new Date(),
-        locations: locations.length ? locations : undefined,
-        faqLinks: result.faqLinks,
-        alerts: result.alerts,
-        sources: result.sources,
-      },
-    ]);
-    if (locations.length) {
-      setMapLocations(locations);
-      setSelectedLocation(locations[0]);
-    }
-  };
 
   const findNearbyEmergency = () => {
     setEmergencyStatus("Locating…");
@@ -468,18 +171,11 @@ export default function Home() {
           setMapLocations(locs);
           setSelectedLocation(locs[0]);
           setEmergencyStatus(`Found ${locs.length} nearby support centers`);
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now().toString(),
-              type: "assistant",
-              content: `Nearest emergency support from your location:\n\n${locs
-                .map((l: MapLocation & { distanceKm?: number }) => `• ${l.name}${l.distanceKm != null ? ` (${l.distanceKm} km)` : ""} — ${l.description || ""}`)
-                .join("\n")}`,
-              timestamp: new Date(),
-              locations: locs,
-            },
-          ]);
+          addNotice(
+            `Nearest emergency support from your location:\n\n${locs
+              .map((l: MapLocation & { distanceKm?: number }) => `• ${l.name}${l.distanceKm != null ? ` (${l.distanceKm} km)` : ""}${l.description ? `: ${l.description}` : ""}`)
+              .join("\n")}`,
+          );
         } catch (err) {
           setEmergencyStatus(err instanceof Error ? err.message : "Emergency lookup failed");
         }
@@ -629,28 +325,12 @@ export default function Home() {
               setSelectedLocation(stops[0]);
             }
             if (summary) {
-              setMessages((prev) => [
-                ...prev,
-                {
-                  id: `wiz_${Date.now()}`,
-                  type: "assistant",
-                  content: summary,
-                  timestamp: new Date(),
-                },
-              ]);
+              addNotice(summary);
             }
           }}
           onDecision={(accepted, message) => {
             setToolsOpen(false);
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: `wiz_dec_${Date.now()}`,
-                type: "assistant",
-                content: accepted ? `✓ ${message}` : message,
-                timestamp: new Date(),
-              },
-            ]);
+            addNotice(accepted ? `✓ ${message}` : message);
           }}
         />
 
@@ -758,13 +438,8 @@ export default function Home() {
         <BookingsPanel refreshKey={bookingsRefreshKey} />
 
         <HandoffPanel
-          messages={messages.map((m) => ({ type: m.type, content: m.content }))}
-          onStatus={(text) =>
-            setMessages((prev) => [
-              ...prev,
-              { id: `hd_${Date.now()}`, type: "assistant", content: text, timestamp: new Date() },
-            ])
-          }
+          messages={notices.map((n) => ({ type: "assistant" as const, content: n.text }))}
+          onStatus={addNotice}
         />
         </div>
       </details>}
@@ -827,34 +502,10 @@ export default function Home() {
               <h1 className="travel-brand truncate text-xl text-foreground">{BRAND.name}</h1>
               <p className="truncate text-[11px] text-muted-foreground">{BRAND.tagline}</p>
             </div>
-            <Button
-              size="sm"
-              className="h-9 shrink-0 gap-1.5 px-3 font-semibold shadow-sm"
-              onClick={() => setToolsOpen(true)}
-              aria-label={t("openTools")}
-            >
-              <PanelRight className="w-4 h-4" />
-              {t("tools")}
-            </Button>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
-            <label className="explore-auto-speak flex items-center gap-1 text-[10px] text-muted-foreground cursor-pointer" title={t("autoSpeak")}>
-              <input
-                type="checkbox"
-                checked={autoSpeak}
-                onChange={(e) => {
-                  setAutoSpeak(e.target.checked);
-                  localStorage.setItem("travelguide_auto_speak", e.target.checked ? "1" : "0");
-                }}
-                aria-label={t("autoSpeak")}
-              />
-              {t("autoSpeak")}
-            </label>
-            <CurrencySwitcher />
-            <div className="flex items-center gap-1">
-              <Languages className="w-3.5 h-3.5 text-muted-foreground" />
-              <LanguageSwitcher />
-            </div>
+            <CurrencySwitcher showRefresh={false} />
+            <LanguageSwitcher />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="h-8 gap-1.5 px-2" aria-label={t("moreNavigation")}>
@@ -864,19 +515,18 @@ export default function Home() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuLabel>{t("moreNavigation")}</DropdownMenuLabel>
-                <DropdownMenuItem asChild><Link href="/">AI Chat Dashboard</Link></DropdownMenuItem>
-                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild><Link href="/">AI Chat</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link href="/compare-trips">{t("compare")}</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/widget">{t("widget")}</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link href="/account">{t("account")}</Link></DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild><Link href="/messaging">{t("whatsApp")}</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/analytics">{t("analytics")}</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/admin">{t("admin")}</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/agent">{t("agent")}</Link></DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <span className="explore-powered-by hidden md:inline text-xs text-muted-foreground">{t("poweredBy")} {BRAND.poweredBy}</span>
+            <ThemeToggle />
+            <span className="explore-powered-by hidden md:inline-flex items-center gap-2 text-xs text-muted-foreground">
+              {t("poweredBy")} {BRAND.poweredBy}
+              {/* Two transparent renderings of the logo: navy lettering for light, pale lettering for dark. */}
+              <img src="/images/cassava-ai-logo.png" alt="" className="h-4 w-auto dark:hidden" />
+              <img src="/images/cassava-ai-logo-dark.png" alt="" className="hidden h-4 w-auto dark:block" />
+            </span>
           </div>
         </div>
       </header>
@@ -895,6 +545,24 @@ export default function Home() {
       )}
 
       <main className="explore-main container mx-auto px-4 py-8">
+        {notices.length > 0 && (
+          <section aria-live="polite" aria-label="Latest updates" className="mb-4 space-y-2">
+            {notices.map((notice) => (
+              <div key={notice.id} className="flex items-start justify-between gap-3 rounded-lg border border-primary/30 bg-accent p-3 text-sm text-accent-foreground">
+                <p className="min-w-0 whitespace-pre-wrap">{notice.text}</p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 shrink-0 px-2"
+                  onClick={() => setNotices((prev) => prev.filter((n) => n.id !== notice.id))}
+                >
+                  Dismiss
+                </Button>
+              </div>
+            ))}
+          </section>
+        )}
         <aside
           id="tools-panel"
           className="hidden xl:block"
@@ -904,14 +572,14 @@ export default function Home() {
         </aside>
 
         <p className="xl:hidden text-xs text-muted-foreground text-center">
-          Tip: open <button type="button" className="text-primary underline" onClick={() => setToolsOpen(true)}>Tools</button> — Essentials (map, itinerary, search) → Plan & book → Help & info.
+          Tip: open <button type="button" className="text-primary underline" onClick={() => setToolsOpen(true)}>Tools</button>: Essentials (map, itinerary, search) → Plan & book → Help & info.
         </p>
 
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            { img: FEATURE_IMAGES.attractions, title: "Discover Attractions", body: "Hours, fees, transport, and events from the mock Commission API." },
-            { img: FEATURE_IMAGES.safety, title: "Stay Safe & Informed", body: "Dynamic compliance feed with rule-based watch/alert severity." },
-            { img: FEATURE_IMAGES.booking, title: "Book securely", body: "Tokenized PCI-DSS shaped mock gateway — no card PANs stored." },
+            { img: FEATURE_IMAGES.attractions, credit: STONE_TOWN_PHOTO, title: "Discover Attractions", body: "Hours, fees, transport, and events from the mock Commission API." },
+            { img: FEATURE_IMAGES.safety, credit: null, title: "Stay Safe & Informed", body: "Dynamic compliance feed with rule-based watch/alert severity." },
+            { img: FEATURE_IMAGES.booking, credit: null, title: "Book securely", body: "Tokenized PCI-DSS shaped mock gateway, no card PANs stored." },
           ].map((block) => (
             <div key={block.title}>
               <div className="relative overflow-hidden rounded-xl mb-4 h-40">
@@ -919,10 +587,14 @@ export default function Home() {
               </div>
               <h3 className="font-bold text-foreground mb-1">{block.title}</h3>
               <p className="text-sm text-muted-foreground">{block.body}</p>
+              {block.credit && (
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Photo: <a className="underline" href={block.credit.sourceUrl} target="_blank" rel="noreferrer">{block.credit.author}</a>, {block.credit.license}, via Wikimedia Commons
+                </p>
+              )}
             </div>
           ))}
         </div>
-
       </main>
 
       <Sheet open={toolsOpen} onOpenChange={setToolsOpen}>

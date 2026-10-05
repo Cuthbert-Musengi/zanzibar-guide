@@ -60,8 +60,8 @@ export default function Messaging() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b bg-white">
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">WhatsApp connector stub</h1>
@@ -83,10 +83,10 @@ export default function Messaging() {
             </p>
             <p className="text-xs text-muted-foreground">{status.note}</p>
             <p className="text-[11px] text-muted-foreground">
-              Webhook verify: <code className="bg-white/80 px-1 rounded">GET /api/messaging/whatsapp?hub.mode=subscribe&amp;hub.verify_token=…&amp;hub.challenge=…</code>
-              {" · "}Env: <code className="bg-white/80 px-1 rounded">WHATSAPP_TOKEN</code>,{" "}
-              <code className="bg-white/80 px-1 rounded">WHATSAPP_PHONE_NUMBER_ID</code>,{" "}
-              <code className="bg-white/80 px-1 rounded">WHATSAPP_VERIFY_TOKEN</code>
+              Webhook verify: <code className="bg-card/80 px-1 rounded">GET /api/messaging/whatsapp?hub.mode=subscribe&amp;hub.verify_token=…&amp;hub.challenge=…</code>
+              {" · "}Env: <code className="bg-card/80 px-1 rounded">WHATSAPP_TOKEN</code>,{" "}
+              <code className="bg-card/80 px-1 rounded">WHATSAPP_PHONE_NUMBER_ID</code>,{" "}
+              <code className="bg-card/80 px-1 rounded">WHATSAPP_VERIFY_TOKEN</code>
             </p>
           </Card>
         )}

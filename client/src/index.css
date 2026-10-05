@@ -43,115 +43,90 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Zanzibar palette — light ("day") values on :root, dark ("night") on .dark.
+   Ocean blue is the brand colour; sand gold is the single warm accent. */
 :root {
-  --primary: oklch(0.55 0.2 200);
-  --primary-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.55 0.2 200);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --chart-1: oklch(0.65 0.18 45);
-  --chart-2: oklch(0.55 0.2 200);
-  --chart-3: oklch(0.50 0.18 200);
-  --chart-4: oklch(0.45 0.15 200);
-  --chart-5: oklch(0.40 0.12 200);
+  color-scheme: light;
   --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.235 0.015 65);
-  --card: oklch(1 0 0);
-    --primary: oklch(0.49 0.14 183);
-  --popover: oklch(1 0 0);
-    --sidebar-primary: oklch(0.49 0.14 183);
-  --secondary: oklch(0.98 0.001 286.375);
-    --chart-1: oklch(0.68 0.16 42);
-    --chart-2: oklch(0.55 0.14 184);
-    --chart-3: oklch(0.58 0.14 250);
-    --chart-4: oklch(0.62 0.13 132);
-    --chart-5: oklch(0.55 0.15 330);
-    --secondary: oklch(0.955 0.018 184);
-    --secondary-foreground: oklch(0.3 0.045 184);
-    --muted: oklch(0.965 0.009 190);
-    --muted-foreground: oklch(0.48 0.025 195);
-    --accent: oklch(0.955 0.045 48);
-    --accent-foreground: oklch(0.34 0.075 40);
-    --border: oklch(0.89 0.018 190);
-    --input: oklch(0.89 0.018 190);
-    --ring: oklch(0.62 0.14 34);
-    --primary: oklch(0.68 0.13 182);
-  --sidebar-ring: oklch(0.623 0.214 259.815);
-    --background: oklch(0.16 0.018 195);
-    --secondary: oklch(0.25 0.025 190);
-    --accent: oklch(0.3 0.055 42);
-    --ring: oklch(0.7 0.12 42);
-  --primary-foreground: oklch(0.1 0 0);
-  --sidebar-primary: oklch(0.65 0.2 200);
-  --sidebar-primary-foreground: oklch(0.1 0 0);
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.85 0.005 65);
-        font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --card-foreground: oklch(0.85 0.005 65);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.85 0.005 65);
-  --secondary: oklch(0.24 0.006 286.033);
-  --secondary-foreground: oklch(0.7 0.005 65);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground:  oklch(0.92 0.005 65);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.488 0.243 264.376);
-  --chart-1: oklch(0.75 0.18 45);
-  --chart-2: oklch(0.65 0.2 200);
-  --chart-3: oklch(0.60 0.18 200);
-  --chart-4: oklch(0.55 0.15 200);
-  --chart-5: oklch(0.50 0.12 200);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.85 0.005 65);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground:  oklch(0.985 0 0);
-      ::selection {
-        color: var(--primary-foreground);
-        background: var(--primary);
-      }
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --background: #faf6ee;
+  --foreground: #10201f;
+  --card: #ffffff;
+  --card-foreground: #10201f;
+  --popover: #ffffff;
+  --popover-foreground: #10201f;
+  --primary: #0e6fb8;
+  --primary-foreground: #ffffff;
+  --secondary: #eaf2fa;
+  --secondary-foreground: #0b4f87;
+  --muted: #f1eadc;
+  --muted-foreground: #5c6b68;
+  --accent: #dfeefa;
+  --accent-foreground: #0a3d6b;
+  --destructive: #c4472f;
+  --destructive-foreground: #ffffff;
+  --border: #e4dac8;
+  --input: #d5c8b0;
+  --ring: #0e6fb8;
+  --chart-1: #0e6fb8;
+  --chart-2: #12a5a6;
+  --chart-3: #c9a24f;
+  --chart-4: #d8735f;
+  --chart-5: #1f8a4c;
+  --sidebar: #0a3d6b;
+  --sidebar-foreground: #eaf2f9;
+  --sidebar-primary: #e8c988;
+  --sidebar-primary-foreground: #0a3d6b;
+  --sidebar-accent: #14599a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.12);
+  --sidebar-ring: #5bb4f0;
+}
 
-  .travel-brand {
-    font-family: 'Fraunces', Georgia, serif;
-    font-weight: 600;
-    letter-spacing: 0;
-  }
+.dark {
+  color-scheme: dark;
+  --background: #06172a;
+  --foreground: #eaf2f9;
+  --card: #0c2540;
+  --card-foreground: #eaf2f9;
+  --popover: #0c2540;
+  --popover-foreground: #eaf2f9;
+  --primary: #5bb4f0;
+  --primary-foreground: #041c30;
+  --secondary: #0f3358;
+  --secondary-foreground: #d6e6f5;
+  --muted: #0a2440;
+  --muted-foreground: #9db6cf;
+  --accent: #123a63;
+  --accent-foreground: #eaf2f9;
+  --destructive: #f0a08e;
+  --destructive-foreground: #041c30;
+  --border: rgba(190, 215, 240, 0.14);
+  --input: rgba(190, 215, 240, 0.2);
+  --ring: #5bb4f0;
+  --chart-1: #5bb4f0;
+  --chart-2: #2cc4c2;
+  --chart-3: #e8c988;
+  --chart-4: #f0a08e;
+  --chart-5: #4cc47e;
+  --sidebar: #030e1b;
+  --sidebar-foreground: #eaf2f9;
+  --sidebar-primary: #e8c988;
+  --sidebar-primary-foreground: #0a3d6b;
+  --sidebar-accent: #0f3358;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(190, 215, 240, 0.14);
+  --sidebar-ring: #5bb4f0;
+}
 
-  .chat-window {
-    overflow: hidden;
-    border-radius: 1.1rem;
-    box-shadow: 0 24px 56px -42px oklch(0.3 0.08 190 / 0.55), 0 2px 8px -5px oklch(0.3 0.08 190 / 0.2);
-  }
+::selection {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
 
-  .chat-composer:focus-within {
-    box-shadow: inset 0 0 0 1px var(--primary), 0 0 0 3px color-mix(in oklch, var(--primary) 14%, transparent);
-  }
-
-  .chat-message-enter {
-    animation: chat-message-enter 220ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
-  }
-
-  @keyframes chat-message-enter {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .assistant-avatar {
-    display: grid;
-    width: 1.75rem;
-    height: 1.75rem;
-    flex: 0 0 1.75rem;
-    place-items: center;
-    border-radius: 0.65rem;
-    color: white;
-    background: linear-gradient(145deg, oklch(0.55 0.14 183), oklch(0.4 0.13 205));
-  }
-  --sidebar-ring: oklch(0.488 0.243 264.376);
+.travel-brand {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 @layer base {
@@ -195,12 +170,6 @@
     @apply cursor-pointer;
   }
 }
-
-  @media (prefers-reduced-motion: reduce) {
-    .chat-message-enter {
-      animation: none;
-    }
-  }
 
 @layer components {
   /**
