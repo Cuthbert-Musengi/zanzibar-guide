@@ -134,10 +134,12 @@
 .zd-status-dot { background: #2baa5e; box-shadow: 0 0 8px rgba(43, 170, 94, 0.7); }
 .zd-status-dot.is-down { background: #f0a08e; box-shadow: 0 0 8px rgba(237, 158, 131, 0.5); }
 .zd-profile { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.zd-profile-avatar, .zd-top-avatar { display: grid; width: 32px; height: 32px; flex: 0 0 32px; place-items: center; color: var(--zd-on-primary); border: 0; border-radius: 50%; background: var(--zd-primary); font-size: 10px; font-weight: 700; }
+.zd-profile-avatar { display: grid; width: 32px; height: 32px; flex: 0 0 32px; place-items: center; color: var(--zd-on-primary); border: 0; border-radius: 50%; background: var(--zd-primary); font-size: 10px; font-weight: 700; }
 .zd-profile > div:nth-child(2) { display: grid; min-width: 0; gap: 1px; }
 .zd-profile strong { overflow: hidden; color: var(--zd-text); font-size: 10px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .zd-profile span { color: var(--zd-muted); font-size: 9px; }
+.zd-profile-name { display: grid; min-width: 0; gap: 1px; }
+.zd-profile-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .zd-profile > button { display: grid; width: 29px; height: 29px; flex: 0 0 29px; margin-left: auto; place-items: center; color: var(--zd-muted); border: 0; border-radius: 5px; background: transparent; }
 .zd-profile > button:hover { color: var(--zd-text); background: color-mix(in srgb, var(--zd-text) 9.6%, transparent); }
 
@@ -148,7 +150,6 @@
 .zd-heading-row { display: flex; align-items: center; gap: 9px; }
 .zd-heading-row h1 { margin: 0; color: var(--zd-text); font-family: "Fraunces", Georgia, serif; font-size: 20px; font-weight: 500; line-height: 1.25; letter-spacing: 0; }
 .zd-topbar-actions { display: flex; align-items: center; gap: 13px; }
-.zd-top-avatar { width: 31px; height: 31px; flex-basis: 31px; }
 .zd-mobile-nav { display: none; }
 
 .zd-conversation { display: flex; flex: 1; flex-direction: column; min-height: 0; }
@@ -283,7 +284,6 @@
   .zd-topbar-title .zd-eyebrow { margin-bottom: 2px; font-size: 7px; }
   .zd-heading-row h1 { font-size: 17px; }
   .zd-topbar-actions { gap: 8px; }
-  .zd-top-avatar { width: 28px; height: 28px; flex-basis: 28px; }
   .zd-mobile-nav { display: flex; align-items: center; gap: 4px; overflow-x: auto; padding: 7px 11px; border-bottom: 1px solid var(--zd-border); scrollbar-width: none; }
   .zd-mobile-nav::-webkit-scrollbar { display: none; }
   .zd-mobile-nav a, .zd-mobile-nav button { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; flex: 0 0 auto; padding: 0 9px; color: var(--zd-muted); border: 1px solid transparent; border-radius: 5px; background: transparent; font-size: 10px; }

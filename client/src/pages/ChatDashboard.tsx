@@ -18,8 +18,11 @@ import {
 } from "lucide-react";
 import { CurrencySwitcher } from "@/contexts/CurrencyContext";
 import { LanguageSwitcher } from "@/contexts/LanguageContext";
+import { userInitials, useAuth } from "@/contexts/AuthContext";
+import AccountMenu from "@/components/AccountMenu";
 import { getSessionId } from "@/lib/session";
-import { STONE_TOWN_PHOTO } from "@/const";
+import { AERIAL_PHOTO, BEACH_PHOTO, STONE_TOWN_PHOTO } from "@/const";
+import PhotoCredit from "@/components/PhotoCredit";
 import "./chat-dashboard.css";
 import TypingIndicator from "@/components/TypingIndicator";
 import { QuickReplies } from "@/components/QuickReplies";
@@ -74,6 +77,7 @@ const SUGGESTIONS = ["Build me a day plan", "Where to eat tonight?", "Best beach
 
 export default function ChatDashboard() {
   const [, navigate] = useLocation();
+  const { user } = useAuth();
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -289,8 +293,12 @@ export default function ChatDashboard() {
             <span>{chatReady === null ? "Connecting to guide" : chatReady ? "Guide ready" : "Guide unavailable"}</span>
           </div>
           <div className="zd-profile">
-            <div className="zd-profile-avatar">TG</div>
-            <div><strong>Travel guest</strong><span>Personal itinerary</span></div>
+            <div className="zd-profile-avatar">{user ? userInitials(user.name) : "TG"}</div>
+            {user ? (
+              <Link href="/account" className="zd-profile-name"><strong>{user.name}</strong><span>{user.email}</span></Link>
+            ) : (
+              <div><strong>Travel guest</strong><span>Personal itinerary</span></div>
+            )}
             <button type="button" title="Open preferences" aria-label="Open preferences" onClick={() => setSettingsOpen((open) => !open)}><Settings2 size={16} /></button>
           </div>
         </div>
@@ -304,7 +312,7 @@ export default function ChatDashboard() {
           </div>
           <div className="zd-topbar-actions">
             <ThemeToggle />
-            <div className="zd-top-avatar" aria-label="Travel guest">TG</div>
+            <AccountMenu />
           </div>
         </header>
 
@@ -364,8 +372,8 @@ export default function ChatDashboard() {
             </form>
             <div className="zd-composer-foot"><span><Check size={12} /> Your plans stay yours</span><span>AI can make mistakes. Verify important travel details.</span></div>
             <div className="zd-photo-credit">
-              <span className="zd-credit-day">Photo: <a href="https://commons.wikimedia.org/wiki/File:Zanzibar,_Tanzania_-_panoramio_(2).jpg" target="_blank" rel="noreferrer">The Erica Chang</a>, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer">CC BY 3.0</a>, via Wikimedia Commons</span>
-              <span className="zd-credit-night">Photo: <a href="https://commons.wikimedia.org/wiki/File:Unguja_island_from_Air.jpg" target="_blank" rel="noreferrer">David Berkowitz</a>, <a href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noreferrer">CC BY 2.0</a>, via Wikimedia Commons</span>
+              <PhotoCredit photo={BEACH_PHOTO} className="zd-credit-day" />
+              <PhotoCredit photo={AERIAL_PHOTO} className="zd-credit-night" />
             </div>
           </div>
         </section>
@@ -388,7 +396,7 @@ export default function ChatDashboard() {
             <p>A living Swahili city of coral-stone lanes, carved doors, and Indian Ocean stories.</p>
             <div className="zd-destination-tags"><span>UNESCO heritage</span><span>Walkable</span></div>
             <button className="zd-text-link" type="button" onClick={() => void sendMessage("What are the highlights of Stone Town for a first-time visitor?")}>Explore highlights <ArrowRight size={14} /></button>
-            <div className="zd-image-credit">Photo: <a href={STONE_TOWN_PHOTO.sourceUrl} target="_blank" rel="noreferrer">{STONE_TOWN_PHOTO.author}</a>, <a href={STONE_TOWN_PHOTO.licenseUrl} target="_blank" rel="noreferrer">{STONE_TOWN_PHOTO.license}</a>, via Wikimedia Commons</div>
+            <div className="zd-image-credit"><PhotoCredit photo={STONE_TOWN_PHOTO} /></div>
           </div>
         </section>
 

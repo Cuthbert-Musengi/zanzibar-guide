@@ -1,28 +1,17 @@
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { getSessionId } from "@/lib/session";
 import { fetchMyBookings, statusLabel, type PublicBooking } from "@/lib/bookings";
 import { useCurrency } from "@/contexts/CurrencyContext";
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  favorites: Array<{ id: string; name: string }>;
-  trips: Array<{ id: string; title: string; createdAt: string }>;
-  bookingIds: string[];
-}
+import { TOKEN_KEY, useAuth } from "@/contexts/AuthContext";
+import AccountMenu from "@/components/AccountMenu";
 
 export default function Account() {
   const { formatMoney, formatPriceLabel } = useCurrency();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [user, setUser] = useState<User | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { user, status, refreshUser } = useAuth();
+  const [, navigate] = useLocation();
   const [gamification, setGamification] = useState<{
     data: { points: number; badges: string[]; reviewsWritten: number; bookingsCount: number };
     deal: { unlocked: boolean; deal: { code: string } | null; need: number };
@@ -37,17 +26,7 @@ export default function Account() {
   const [favShare, setFavShare] = useState<string | null>(null);
   const [myBookings, setMyBookings] = useState<PublicBooking[]>([]);
 
-  const token = () => localStorage.getItem("travelguide_token");
-
-  const refresh = async () => {
-    const t = token();
-    if (!t) return;
-    const res = await fetch("/api/auth/me", { headers: { Authorization: `Bearer ${t}` } });
-    if (res.ok) {
-      const data = await res.json();
-      setUser(data.data);
-    }
-  };
+  const token = () => localStorage.getItem(TOKEN_KEY);
 
   const loadGame = async () => {
     const key = user?.id || getSessionId();
@@ -66,9 +45,14 @@ export default function Account() {
     setTravelProfile(data.data?.profile || null);
   };
 
+  // Favourites and trips change elsewhere in the app, so reload the profile when the page opens.
   useEffect(() => {
-    refresh().catch(() => {});
-  }, []);
+    refreshUser();
+  }, [refreshUser]);
+
+  useEffect(() => {
+    if (status === "signedOut") navigate("/login?next=/account", { replace: true });
+  }, [status, navigate]);
 
   useEffect(() => {
     if (!user) {
@@ -84,43 +68,6 @@ export default function Account() {
     loadGame().catch(() => {});
     loadTravelProfile().catch(() => {});
   }, [user?.id]);
-
-  const register = async () => {
-    setError(null);
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error || "Register failed");
-      return;
-    }
-    localStorage.setItem("travelguide_token", data.data.token);
-    setUser(data.data.user);
-  };
-
-  const login = async () => {
-    setError(null);
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error || "Login failed");
-      return;
-    }
-    localStorage.setItem("travelguide_token", data.data.token);
-    setUser(data.data.user);
-  };
-
-  const logout = () => {
-    localStorage.removeItem("travelguide_token");
-    setUser(null);
-  };
 
   const shareFavorites = async () => {
     const items = (user?.favorites || []).map((f) => ({ id: f.id, name: f.name || f.id }));
@@ -152,28 +99,18 @@ export default function Account() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex justify-between">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold">Account</h1>
-          <Link href="/" className="text-sm text-primary hover:underline">
-            Back
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/" className="text-sm text-primary hover:underline">
+              Back
+            </Link>
+            <AccountMenu />
+          </div>
         </div>
       </header>
       <main className="container mx-auto px-4 py-8 max-w-lg space-y-4">
-        {!user ? (
-          <Card className="p-4 space-y-3">
-            <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-            <Input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            {error && <p className="text-xs text-destructive">{error}</p>}
-            <div className="flex gap-2">
-              <Button onClick={login}>Log in</Button>
-              <Button variant="secondary" onClick={register}>
-                Register
-              </Button>
-            </div>
-          </Card>
-        ) : (
+        {user && (
           <Card className="p-4 space-y-3">
             <p className="font-semibold">{user.name}</p>
             <p className="text-sm text-muted-foreground">{user.email}</p>
@@ -263,15 +200,6 @@ export default function Account() {
               </Link>
             </div>
             {favShare && <p className="text-[10px] break-all text-muted-foreground">{favShare}</p>}
-            <Button variant="outline" onClick={logout}>
-              Log out
-            </Button>
-          </Card>
-        )}
-        {!user && gamification && (
-          <Card className="p-4 text-xs space-y-1">
-            <p className="font-medium">Guest travel profile</p>
-            <p>{gamification.data.points} pts · {gamification.data.badges.map((b) => labels[b] || b).join(", ") || "no badges yet"}</p>
           </Card>
         )}
       </main>

@@ -13,6 +13,7 @@
     "docker:down": "docker compose down",
     "preview": "vite preview --host",
     "check": "tsc --noEmit",
+    "test": "vitest run",
     "format": "prettier --write .",
     "eval": "tsx eval/run.ts"
   },

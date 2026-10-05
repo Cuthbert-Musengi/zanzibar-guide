@@ -23,7 +23,7 @@ export default function ThemeToggle() {
         width: 34,
         height: 34,
         borderRadius: 8,
-        border: "1px solid var(--border)",
+        border: "1px solid var(--theme-toggle-border, var(--border))",
         background: "transparent",
       }}
     >
