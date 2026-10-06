@@ -4,6 +4,7 @@ import TypingIndicator from "@/components/TypingIndicator";
 import { ChatMap, type MapLocation } from "@/components/ChatMap";
 import { AttractionCard } from "@/components/AttractionCard";
 import SourcesModal from "@/components/SourcesModal";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type ChatRole = "user" | "assistant";
 
@@ -35,7 +36,8 @@ type Props = {
   providerLabel?: string;
 };
 
-export default function ChatMessage({ message, providerLabel = "Adaptive AI" }: Props) {
+export default function ChatMessage({ message, providerLabel }: Props) {
+  const { t } = useLanguage();
   const isAssistant = message.role === "assistant";
   const [showMap, setShowMap] = useState(false);
   const [showSources, setShowSources] = useState(false);
@@ -49,11 +51,11 @@ export default function ChatMessage({ message, providerLabel = "Adaptive AI" }: 
       )}
       <div className="zd-message-body">
         <div className="zd-message-meta">
-          <strong>{isAssistant ? "Zanzibar Guide" : "You"}</strong>
+          <strong>{isAssistant ? "Zanzibar Guide" : t("you")}</strong>
           <span>{message.time}</span>
           {isAssistant && (
             <span className="zd-message-model">
-              <Sparkles size={11} /> {providerLabel}
+              <Sparkles size={11} /> {providerLabel ?? t("adaptiveAi")}
             </span>
           )}
         </div>
@@ -66,7 +68,7 @@ export default function ChatMessage({ message, providerLabel = "Adaptive AI" }: 
         {isAssistant && message.meta?.sources && message.meta.sources.length > 0 && (
           <>
             <div className="zd-message-sources mt-2 text-xs text-foreground/70 flex items-center gap-2">
-              <span className="zd-sources-label">Sources:</span>
+              <span className="zd-sources-label">{t("sourcesLabel")}</span>
               {message.meta.sources.slice(0, 3).map((s, idx) => (
                 <button
                   key={s.id}
@@ -78,9 +80,9 @@ export default function ChatMessage({ message, providerLabel = "Adaptive AI" }: 
                   [{idx + 1}] {s.title ? (s.title.length > 24 ? s.title.slice(0, 21) + "…" : s.title) : s.id}
                 </button>
               ))}
-              {message.meta.sources.length > 3 && <span className="zd-more-sources">+{message.meta.sources.length - 3} more</span>}
+              {message.meta.sources.length > 3 && <span className="zd-more-sources">{t("moreSources", { count: message.meta.sources.length - 3 })}</span>}
               <button type="button" className="zd-open-sources text-xs underline" onClick={() => setShowSources(true)}>
-                View all
+                {t("viewAll")}
               </button>
             </div>
             <SourcesModal open={showSources} onClose={() => setShowSources(false)} sources={message.meta.sources} />
@@ -101,7 +103,7 @@ export default function ChatMessage({ message, providerLabel = "Adaptive AI" }: 
                 className="inline-flex items-center gap-2 text-xs text-foreground/80 px-2 py-1 rounded-md border border-border/50 bg-background/60"
                 onClick={() => setShowMap((s) => !s)}
               >
-                <MapPin size={14} /> {showMap ? "Hide map" : `View ${message.meta.locations.length} on map`}
+                <MapPin size={14} /> {showMap ? t("hideMap") : t("viewOnMap", { count: message.meta.locations.length })}
               </button>
             </div>
 

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { getSessionId } from "@/lib/session";
-import { LANGUAGE_LABELS, LANGUAGES, type Language } from "@/i18n/languages";
+import { LANGUAGE_LABELS, LANGUAGE_LOCALES, LANGUAGES, type Language } from "@/i18n/languages";
 import { interpolate, translations } from "@/i18n/translations";
 
 export type { Language } from "@/i18n/languages";
@@ -11,6 +11,8 @@ interface LanguageContextType {
   setLanguage: (lang: Language) => void;
   t: (key: string, vars?: Record<string, string | number>) => string;
   languageLabel: string;
+  /** Locale for Intl date and time formatting */
+  locale: string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -18,6 +20,15 @@ const KEY = "tourism_chatbot_language";
 
 function isLanguage(v: string | null): v is Language {
   return v === "en" || v === "es" || v === "fr" || v === "de" || v === "zh" || v === "sw";
+}
+
+/** The first of the browser's preferred languages that the app supports, if any. */
+function browserLanguage(): Language | null {
+  for (const tag of navigator.languages ?? [navigator.language]) {
+    const primary = tag.toLowerCase().split("-")[0];
+    if (isLanguage(primary)) return primary;
+  }
+  return null;
 }
 
 function syncLanguageToServer(lang: Language) {
@@ -31,8 +42,9 @@ function syncLanguageToServer(lang: Language) {
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
     if (typeof window === "undefined") return "en";
+    // An explicit choice wins; otherwise follow the browser. Only explicit choices are stored.
     const stored = localStorage.getItem(KEY);
-    return isLanguage(stored) ? stored : "en";
+    return isLanguage(stored) ? stored : (browserLanguage() ?? "en");
   });
 
   useEffect(() => {
@@ -56,7 +68,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <LanguageContext.Provider
-      value={{ language, setLanguage, t, languageLabel: LANGUAGE_LABELS[language] }}
+      value={{ language, setLanguage, t, languageLabel: LANGUAGE_LABELS[language], locale: LANGUAGE_LOCALES[language] }}
     >
       {children}
     </LanguageContext.Provider>

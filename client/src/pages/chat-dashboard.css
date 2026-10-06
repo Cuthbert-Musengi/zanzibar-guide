@@ -73,6 +73,9 @@
 }
 
 .zanzibar-dashboard * { box-sizing: border-box; }
+/* Small labels are written in sentence case in the translations and capitalised here. */
+.zd-brand-copy span, .zd-nav-label, .zd-eyebrow, .zd-trip-overline, .zd-day-divider, .zd-feed-end,
+.zd-composer-hint, .zd-image-tag, .zd-section-title span, .zd-weather-note > span, .zd-insights-footer { text-transform: uppercase; }
 .zanzibar-dashboard button, .zanzibar-dashboard a, .zanzibar-dashboard input { font: inherit; letter-spacing: 0; }
 .zanzibar-dashboard button { color: inherit; }
 .zanzibar-dashboard a { color: inherit; text-decoration: none; }
@@ -187,7 +190,7 @@
 .zd-feed-end { display: flex; align-self: center; align-items: center; justify-content: center; gap: 6px; margin-top: auto; padding: 4px 10px; border-radius: 10px; background: rgba(3, 14, 27, 0.42); color: var(--zd-on-photo); font-size: 8px; font-weight: 700; letter-spacing: 0; text-shadow: 0 1px 3px rgba(3, 14, 27, 0.6); }
 .zd-feed-end svg { color: var(--zd-gold); }
 .zd-composer-area { padding: 13px 31px 16px; border-top: 1px solid var(--zd-border); background: var(--zd-bg); }
-.zd-suggestion-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; margin-bottom: 11px; }
+.zd-suggestion-row { display: flex; flex-wrap: wrap; justify-content: safe center; gap: 7px; margin-bottom: 11px; }
 .zd-suggestion-row button { display: inline-flex; align-items: center; gap: 6px; min-height: 27px; padding: 0 9px; color: var(--zd-text); border: 1px solid var(--zd-border); border-radius: 14px; background: var(--zd-panel); font-size: 9px; transition: border-color 140ms ease, color 140ms ease, background 140ms ease; }
 .zd-suggestion-row button:hover:not(:disabled) { color: var(--zd-teal); border-color: color-mix(in srgb, var(--zd-teal) 35%, transparent); background: color-mix(in srgb, var(--zd-teal) 5.5%, transparent); }
 .zd-suggestion-row button:disabled { opacity: .5; }
